@@ -1,0 +1,26 @@
+{
+    "name": "UNet",
+    "n_gpu": 1,
+    "use_cudnn": true,
+    "save_location": "",
+    "train_data": {
+        "dataset_dir": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15/train",
+        "batch_size": 100,
+        "shuffle": true,
+        "num_workers": 40
+    },
+    "optimizer": {
+        "lr": 0.0002
+    },
+    "trainer": {
+        "epochs": 300,
+        "save_period": 3
+    },
+    "lr_scheduler": {
+        "type": "StepLR",
+        "args": {
+            "step_size": 50,
+            "gamma": 0.1
+        }
+    }
+}
