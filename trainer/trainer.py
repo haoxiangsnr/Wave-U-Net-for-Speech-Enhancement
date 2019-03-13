@@ -16,7 +16,7 @@ class Trainer(BaseTrainer):
             model,
             optim,
             train_dl,
-            validation_dl=None
+            validation_dl
     ):
         super(Trainer, self).__init__(config, resume, model, optim)
         self.train_data_loader = train_dl
@@ -32,23 +32,39 @@ class Trainer(BaseTrainer):
     def _train_epoch(self):
         """定义单次训练的逻辑"""
         self._set_model_train()
-        losses = {
-            "D_fake": 0.0,
-            "D_real": 0.0,
-            "D": 0.0,
-            "G_GAN": 0.0,
-            "G_L1": 0.0,
-            "G": 0.0,
-        }
-        # TODO
-        return losses
+        loss_total = 0.0
+        for i, (data, target, basename_text) in enumerate(self.train_data_loader):
+            data = data.to(self.dev)
+            target = target.to(self.dev)
+            self.optimizer.zero_grad()
+            output = self.model(data)
+            loss = self.loss(output, target)
+            loss_total += float(loss)
+            loss.backward()
+            self.optimizer.step()
 
-    def _valid_epoch(self, valid_data_loader):
+        # https://discuss.pytorch.org/t/about-the-relation-between-batch-size-and-length-of-data-loader/10510/4
+        # The length of the loader will adapt to the batch_size
+        loss_ave = loss_total / len(self.train_data_loader)
+        return loss_ave
+
+    def _valid_epoch(self):
         """定义单次验证的逻辑"""
         # TODO
         self._set_model_eval()
+        loss_total = 0.0
         with torch.no_grad():
-            pass
+            for i, (data, target, basename_text) in enumerate(self.validation_data_loader):
+                data = data.to(self.dev)
+                target = target.to(self.dev)
+
+                output = self.model(data)
+                loss = self.loss(output, target)
+                loss_total += float(loss)
+
+        loss_ave = loss_total / len(self.validation_data_loader)
+
+        return loss_ave
 
     def _transform_pesq_range(self, pesq_score):
         """将 pesq 的范围从 -0.5 ~ 4.5 迁移至 0 ~ 1"""
@@ -74,16 +90,24 @@ class Trainer(BaseTrainer):
             return True
         return False
 
+
     def train(self):
         for epoch in range(self.start_epoch, self.epochs + 1):
-            timer = ExecutionTime()
             print(f"============ Train epoch = {epoch} ============")
+            print("[0 seconds] 开始训练...")
+            timer = ExecutionTime()
             self.viz.set_epoch(epoch)
 
-            print("[0 seconds] 开始训练...")
-            losses = self._train_epoch()
-            # TODO
-            # 存储常规模型
+            train_loss = self._train_epoch()
+            print("训练损失：", train_loss)
+            self.viz.writer.add_scalar("训练损失", train_loss, epoch)
+            valid_loss = self._valid_epoch()
+            self.viz.writer.add_scalar("验证损失", valid_loss, epoch)
+
+            # TODO 等待修改默认最佳值
+            if train_loss < self.mini_loss:
+                self._save_checkpoint(epoch, save_best=True)
+
             if epoch % self.save_period == 0:
                 self._save_checkpoint(epoch)
 

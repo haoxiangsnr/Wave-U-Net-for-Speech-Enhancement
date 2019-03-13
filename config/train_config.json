@@ -5,9 +5,18 @@
     "save_location": "",
     "train_data": {
         "dataset_dir": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15/train",
-        "batch_size": 100,
+        "limit": 10,
+        "offset": 0,
+        "batch_size": 10,
         "shuffle": true,
-        "num_workers": 40
+        "num_workers": 10
+    },
+    "valid_data": {
+        "dataset_dir": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15/train",
+        "limit": 10,
+        "offset": 0,
+        "batch_size": 10,
+        "num_workers": 10
     },
     "optimizer": {
         "lr": 0.0002

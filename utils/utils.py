@@ -1,11 +1,9 @@
 import os
-import shutil
 import time
+
 import librosa
 import numpy as np
-import torch
-import torch.nn.functional as F
-from tqdm import tqdm
+
 
 class ExecutionTime:
     """
@@ -83,11 +81,11 @@ def sample_fixed_length_data_aligned(data_a, data_b, sample_length):
     """
 
     assert len(data_a) == len(data_b), "数据长度不一致，无法完成定长采样"
-    assert sample_length >= len(data_a)
+    assert len(data_a) >= sample_length
 
     frames_total = len(data_a)
 
-    start = np.random.randint(sample_length - frames_total + 1)
+    start = np.random.randint(frames_total - sample_length + 1)
     end = start + sample_length
 
     return data_a[start:end], data_b[start:end]

@@ -1,3 +1,4 @@
+import numpy as np
 import os
 from pathlib import Path
 
@@ -33,7 +34,10 @@ class TrainDataset(Dataset):
         return self.length
 
     def __getitem__(self, item):
+        print(f"Index {item}")
+        np.random.seed(0)
         sr = 16000
+        sample_length = 16384
 
         noisy_wav_path = self.noisy_wav_paths[item]
         clean_wav_path = self.clean_wav_paths[item]
@@ -44,6 +48,6 @@ class TrainDataset(Dataset):
         basename_text, _ = os.path.splitext(os.path.basename(noisy_wav_path))
 
         # 定长采样
-        noisy_y, clean_y = sample_fixed_length_data_aligned(noisy_y, clean_y, sr)
+        noisy_y, clean_y = sample_fixed_length_data_aligned(noisy_y, clean_y, sample_length)
 
-        return noisy_y, clean_y, basename_text
+        return noisy_y.reshape(1, -1), clean_y.reshape(1, -1), basename_text

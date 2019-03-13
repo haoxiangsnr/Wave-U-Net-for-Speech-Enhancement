@@ -22,26 +22,25 @@ class BaseTrainer:
             model: 模型
             optim: 优化器
         """
-        self.dev, self.device_ids = self._prepare_device(config["n_gpu"], use_cudnn=config["use_cudnn"])
 
-        model = model.to(self.dev)
-        if len(self.device_ids) > 1:
-            model = torch.nn.DataParallel(model, device_ids=self.device_ids)
-        self.model = model
+        self.n_gpu = config["n_gpu"]
+        self.dev = self._prepare_device(self.n_gpu, use_cudnn=config["use_cudnn"])
+
+        self.model = model.to(self.dev)
+        if self.n_gpu > 1:
+            self.model = torch.nn.DataParallel(self.model, device_ids=list(range(self.n_gpu)))
 
         self.optimizer = optim
         self.loss = torch.nn.MSELoss()
-
         self.epochs = config["trainer"]["epochs"]
         self.save_period = config["trainer"]["save_period"]
         self.start_epoch = 0  # 非配置项，当 resume == True 时，参数会被重置
         self.best_score = 0.0  # 非配置项
-
-        self.root_dir = Path(config.system.save_location) / config.system.name
+        self.mini_loss = 1000
+        self.root_dir = Path(config["save_location"]) / config["name"]
         self.checkpoints_dir = self.root_dir / "checkpoints"
         self.tensorboardX_logs_dir = self.root_dir / "logs"
         self._prepare_empty_dir([self.root_dir, self.checkpoints_dir, self.tensorboardX_logs_dir], resume)
-
         self.viz = TensorboardXWriter(self.tensorboardX_logs_dir.as_posix())
 
         if resume: self._resume_checkpoint()
@@ -81,7 +80,7 @@ class BaseTrainer:
             "optim_state_dict": self.optimizer.state_dict(),
         }
 
-        if self.dev.type == "cuda" and len(self.device_ids) > 1:
+        if self.dev.type == "cuda" and self.n_gpu > 1:
             state_dict["model_state_dict"] = self.model.module.cpu().state_dict()
         else:
             state_dict["model_state_dict"] = self.model.cpu().state_dict()
@@ -118,14 +117,14 @@ class BaseTrainer:
         根据 n_gpu 的大小选择使用 CPU 或 GPU
 
         Args:
-            n_gpu(int): 实验使用 GPU 的数量，当 n_gpu 为 0 时，使用 CPU
+            n_gpu(int): 实验使用 GPU 的数量，当 n_gpu 为 0 时，使用 CPU，n_gpu > 1时，使用
 
         Note:
-            1. 一开始需要设置可见 GPU，修改第一块 GPU 的起始位置，否则默认加载模型只能在绝对位置的 cuda:0 上
-            2. 在当前项目初始时设置可见的 GPU 后，项目中的只需要使用相对编号即可
-            3. cudnn benchmark 会自动寻找算法来优化固定大小的输入时的计算，如果需要考虑实验的可重复性，可以设置：
+            1. 运行 train.py 脚本时需要设置可见 GPU，此时修改第一块 GPU 的起始位置，否则默认加载模型只能在绝对位置的 cuda:0 上
+            2. 在当前项目初始时设置可见的 GPU 后，项目中只能使用相对编号
+            3. cudnn benchmark 会自动寻找算法来优化固定大小的输入时的计算，如果考虑实验的可重复性，可以设置：
                 torch.backends.cudnn.deterministic = True
-                即使用固定的算法，会有一些性能的影响， 但是能保证可重复性
+               即使用固定的算法，会有一些性能的影响，但是能保证可重复性
         """
         use_cpu = False
 
@@ -144,7 +143,7 @@ class BaseTrainer:
 
         device = torch.device("cpu" if use_cpu else "cuda:0")
 
-        return device, list(range(n_gpu))
+        return device
 
     def _train_epoch(self):
         raise NotImplementedError

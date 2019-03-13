@@ -10,13 +10,12 @@ from trainer.trainer import Trainer
 
 
 def main(config, resume):
-    train_data_args = config["train_data_loader"]
+    train_data_args = config["train_data"]
     train_dataset = TrainDataset(
         dataset_dir=train_data_args["dataset_dir"],
         limit=train_data_args["limit"],
         offset=train_data_args["offset"]
     )
-
     train_data_loader = DataLoader(
         dataset=train_dataset,
         batch_size=train_data_args["batch_size"],
@@ -25,12 +24,25 @@ def main(config, resume):
         pin_memory=True
     )
 
+    valid_data_args = config["valid_data"]
+    valid_dataset = TrainDataset(
+        dataset_dir=valid_data_args["dataset_dir"],
+        limit=valid_data_args["limit"],
+        offset=valid_data_args["offset"]
+    )
+    valid_data_loader = DataLoader(
+        dataset=valid_dataset,
+        batch_size=valid_data_args["batch_size"],
+        num_workers=valid_data_args["num_workers"],
+        pin_memory=True
+    )
+
     model = UNet()
 
     optimizer = torch.optim.Adam(
         params=model.parameters(),
         lr=config["optimizer"]["lr"],
-        betas=(config["optimizer"]["b1"], 0.999)
+        betas=(0.9, 0.999)
     )
 
     trainer = Trainer(
@@ -39,7 +51,7 @@ def main(config, resume):
         model=model,
         optim=optimizer,
         train_dl=train_data_loader,
-        validation_dl=None
+        validation_dl=valid_data_loader
     )
 
     trainer.train()
