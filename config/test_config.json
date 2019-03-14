@@ -1,0 +1,9 @@
+{
+    "name": "UNet",
+    "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet",
+    "test_data": {
+        "dataset_dir": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15/test",
+        "limit": 1000,
+        "offset": 20000
+    }
+}

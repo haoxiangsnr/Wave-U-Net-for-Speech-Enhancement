@@ -12,8 +12,11 @@ class ExecutionTime:
         <Something...>
         print(f'Finished in {timer.duration()} seconds.')
     """
+
+
     def __init__(self):
         self.start_time = time.time()
+
 
     def duration(self):
         return time.time() - self.start_time
@@ -70,6 +73,7 @@ def set_requires_grad(nets, requires_grad=False):
         if net is not None:
             for param in net.parameters():
                 param.requires_grad = requires_grad
+
 
 def sample_fixed_length_data_aligned(data_a, data_b, sample_length):
     """

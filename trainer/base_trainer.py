@@ -2,7 +2,6 @@ import json
 import os
 from pathlib import Path
 
-import tensorboardX
 import torch
 
 from utils.visualization import TensorboardXWriter
@@ -52,17 +51,23 @@ class BaseTrainer:
             json.dump(config, handle, indent=2, sort_keys=False)
         self._print_networks([self.model])
 
+
     def _resume_checkpoint(self):
-        """从最近一次的模型断点处重启"""
+        """恢复至最近一次的模型断点
+
+        恢复至最近一次的模型断点。模型加载时要特殊留意，如果模型是 DataParallel 的实例，需要读取 model.module.*
+
+        """
+
         latest_model_path = self.checkpoints_dir / "latest_model.tar"
 
         if latest_model_path.exists():
             print(f"正在加载最近一次保存的模型断点 {latest_model_path}")
+
             checkpoint = torch.load(latest_model_path.as_posix(), map_location=self.dev)
             self.start_epoch = checkpoint["epoch"] + 1
             self.best_score = checkpoint["best_score"]
             self.optimizer.load_state_dict(checkpoint["optim_state_dict"])
-
             if isinstance(self.model, torch.nn.DataParallel):
                 self.model.module.load_state_dict(checkpoint["model_state_dict"])
             else:
@@ -72,27 +77,44 @@ class BaseTrainer:
         else:
             print(f"{latest_model_path} 不存在，无法加载最近一次保存的模型断点")
 
+
     def _save_checkpoint(self, epoch, save_best=False):
+        """存储模型断点
+
+        将模型断点存储至 checkpoints 目录，包含：
+            - 当前轮次数
+            - 历史上最高的得分
+            - 优化器参数
+            - 模型参数
+
+        Args:
+            epoch:
+            save_best:
+
+        """
+
         print("正在存储模型断点，epoch = {} ...".format(epoch))
+
+        # 构建待存储的数据字典
         state_dict = {
             "epoch": epoch,
             "best_score": self.best_score,
             "optim_state_dict": self.optimizer.state_dict(),
         }
-
         if self.dev.type == "cuda" and self.n_gpu > 1:
             state_dict["model_state_dict"] = self.model.module.cpu().state_dict()
         else:
             state_dict["model_state_dict"] = self.model.cpu().state_dict()
 
+        # 存储三个数据字典
         torch.save(state_dict, (self.checkpoints_dir / "latest_model.tar").as_posix())
         torch.save(state_dict, (self.checkpoints_dir / f"model_{str(epoch).zfill(3)}.tar").as_posix())
-
         if save_best:
             print("发现最优模型，正在存储中， epoch = {} ...".format(epoch))
             torch.save(state_dict, (self.checkpoints_dir / "best_model.tar").as_posix())
 
-        self.model.to(self.dev)  # model.cpu() 会将模型转移至 CPU
+        self.model.to(self.dev)  # model.cpu() 会将模型转移至 CPU，此时需要将模型重新转至 GPU
+
 
     @staticmethod
     def _print_networks(nets: list):
@@ -103,6 +125,7 @@ class BaseTrainer:
 
         print(f"当前网络共有参数：{num_params / 1e6} 百万个.")
 
+
     @staticmethod
     def _prepare_empty_dir(dirs, resume):
         for dir_path in dirs:
@@ -110,6 +133,7 @@ class BaseTrainer:
                 assert dir_path.exists()
             else:
                 dir_path.mkdir(parents=False, exist_ok=True)
+
 
     @staticmethod
     def _prepare_device(n_gpu: int, use_cudnn=True):
@@ -145,8 +169,10 @@ class BaseTrainer:
 
         return device
 
+
     def _train_epoch(self):
         raise NotImplementedError
+
 
     def train(self):
         raise NotImplementedError

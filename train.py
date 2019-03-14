@@ -19,8 +19,8 @@ def main(config, resume):
     train_data_loader = DataLoader(
         dataset=train_dataset,
         batch_size=train_data_args["batch_size"],
-        num_workers = train_data_args["num_workers"],
-        shuffle = train_data_args["shuffle"],
+        num_workers=train_data_args["num_workers"],
+        shuffle=train_data_args["shuffle"],
         pin_memory=True
     )
 
@@ -37,6 +37,18 @@ def main(config, resume):
         pin_memory=True
     )
 
+    test_data_args = config["test_data"]
+    test_dataset = TrainDataset(
+        dataset_dir=test_data_args["dataset_dir"],
+        limit=test_data_args["limit"],
+        offset=test_data_args["offset"],
+    )
+    test_data_loader = DataLoader(
+        dataset=test_dataset,
+        batch_size=1,
+        num_workers=1
+    )
+
     model = UNet()
 
     optimizer = torch.optim.Adam(
@@ -51,10 +63,12 @@ def main(config, resume):
         model=model,
         optim=optimizer,
         train_dl=train_data_loader,
-        validation_dl=valid_data_loader
+        validation_dl=valid_data_loader,
+        test_dl=test_data_loader
     )
 
     trainer.train()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='UNet For Speech Enhancement')

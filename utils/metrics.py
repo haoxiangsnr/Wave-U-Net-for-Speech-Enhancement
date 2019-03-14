@@ -3,11 +3,14 @@ import os
 import multiprocessing
 from pypesq import pesq
 
+
 def compute_STOI(clean_signal, noisy_signal, sr=16000):
     return stoi(clean_signal, noisy_signal, sr, extended=False)
 
+
 def _compute_PESQ_sub_task(clean_signal, noisy_siganl, sr=16000):
     return pesq(clean_signal, noisy_siganl, sr)
+
 
 def compute_PESQ(clean_signal, noisy_signal, sr=16000):
     """
