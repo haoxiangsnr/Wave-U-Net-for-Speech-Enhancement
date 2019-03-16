@@ -8,7 +8,7 @@ from utils.visualization import TensorboardXWriter
 
 
 class BaseTrainer:
-    def __init__(self, config, resume: bool, model, optim):
+    def __init__(self, config, resume: bool, model, loss_func, optim):
         """
         构建模型训练器的基类，包含以下功能：
             - 初始化 CUDA 与并行
@@ -30,7 +30,7 @@ class BaseTrainer:
             self.model = torch.nn.DataParallel(self.model, device_ids=list(range(self.n_gpu)))
 
         self.optimizer = optim
-        self.loss = torch.nn.MSELoss()
+        self.loss_func = loss_func
         self.epochs = config["trainer"]["epochs"]
         self.save_period = config["trainer"]["save_period"]
         self.start_epoch = 0  # 非配置项，当 resume == True 时，参数会被重置

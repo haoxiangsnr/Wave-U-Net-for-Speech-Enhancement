@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 
 from data.train_npy_dataset import TrainNpyDataset
 from models.unet import UNet
+import models.loss as model_loss
 from trainer.trainer import Trainer
 
 
@@ -57,10 +58,13 @@ def main(config, resume):
         betas=(0.9, 0.999)
     )
 
+    loss_func = getattr(model_loss, config["loss_func"])
+
     trainer = Trainer(
         config=config,
         resume=resume,
         model=model,
+        loss_func=loss_func,
         optim=optimizer,
         train_dl=train_data_loader,
         validation_dl=valid_data_loader,

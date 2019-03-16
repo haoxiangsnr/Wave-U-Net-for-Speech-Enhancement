@@ -158,3 +158,5 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+/config/train_config*
+/config/test_config*

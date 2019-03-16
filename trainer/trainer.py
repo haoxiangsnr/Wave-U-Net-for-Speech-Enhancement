@@ -20,12 +20,13 @@ class Trainer(BaseTrainer):
             config,
             resume: bool,
             model,
+            loss_func,
             optim,
             train_dl,
             validation_dl,
             test_dl
     ):
-        super(Trainer, self).__init__(config, resume, model, optim)
+        super(Trainer, self).__init__(config, resume, model, loss_func, optim)
         self.train_data_loader = train_dl
         self.validation_data_loader = validation_dl
         self.test_data_loader = test_dl
@@ -60,7 +61,7 @@ class Trainer(BaseTrainer):
             target = target.to(self.dev)
             self.optimizer.zero_grad()
             output = self.model(data)
-            loss = self.loss(output, target)
+            loss = self.loss_func(output, target)
             loss_total += float(loss)
             loss.backward()
             self.optimizer.step()
@@ -88,7 +89,7 @@ class Trainer(BaseTrainer):
                 target = target.to(self.dev)
 
                 output = self.model(data)
-                loss = self.loss(output, target)
+                loss = self.loss_func(output, target)
                 loss_total += float(loss)
 
         loss_ave = loss_total / len(self.validation_data_loader)
