@@ -3,7 +3,7 @@
     "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet",
     "test_data": {
         "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15_800_900/test.npy",
-        "limit": 0,
-        "offset": 0
+        "limit": 5000,
+        "offset": 44000
     }
 }

@@ -9,5 +9,5 @@ def l1_loss(output, target):
     return loss(output, target)
 
 def bce_loss(output, target):
-    loss = torch.nn.BCELoss()
-    return loss(output, target)
+    loss = torch.nn.BCEWithLogitsLoss()
+    return loss(output, target) # output 0~1
