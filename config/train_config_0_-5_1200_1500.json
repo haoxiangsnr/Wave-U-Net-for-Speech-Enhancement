@@ -1,25 +1,25 @@
 {
-    "name": "UNet_0_-5_-10_-15_800_900",
-    "n_gpu": 3,
+    "name": "UNet_0_-5_1200_1500",
+    "n_gpu": 1,
     "use_cudnn": true,
     "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet",
     "train_data": {
-        "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15_800_900/train.npy",
+        "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_1200_1500/train.npy",
         "limit": 9000,
         "offset": 0,
-        "batch_size": 400,
+        "batch_size": 150,
         "shuffle": true,
         "num_workers": 40
     },
     "valid_data": {
-        "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15_800_900/train.npy",
+        "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_1200_1500/train.npy",
         "limit": 400,
         "offset": 9000,
         "batch_size": 400,
         "num_workers": 40
     },
     "test_data": {
-        "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15_800_900/test.npy",
+        "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_1200_1500/test.npy",
         "limit": 100,
         "offset": 44000
     },

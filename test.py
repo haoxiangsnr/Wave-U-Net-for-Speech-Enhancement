@@ -23,7 +23,7 @@ def load_checkpoint(checkpoints_dir, name, dev):
 def main(config, epoch):
     test_data_args = config["test_data"]
     test_dataset = TrainDataset(
-        dataset_dir=test_data_args["dataset_dir"],
+        dataset=test_data_args["dataset_dir"],
         limit=test_data_args["limit"],
         offset=test_data_args["offset"]
     )

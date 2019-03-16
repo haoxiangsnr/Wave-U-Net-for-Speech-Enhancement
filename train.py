@@ -4,15 +4,15 @@ import os
 import torch
 from torch.utils.data import DataLoader
 
-from data.train_dataset import TrainDataset
+from data.train_npy_dataset import TrainNpyDataset
 from models.unet import UNet
 from trainer.trainer import Trainer
 
 
 def main(config, resume):
     train_data_args = config["train_data"]
-    train_dataset = TrainDataset(
-        dataset_dir=train_data_args["dataset_dir"],
+    train_dataset = TrainNpyDataset(
+        dataset=train_data_args["dataset"],
         limit=train_data_args["limit"],
         offset=train_data_args["offset"]
     )
@@ -25,8 +25,8 @@ def main(config, resume):
     )
 
     valid_data_args = config["valid_data"]
-    valid_dataset = TrainDataset(
-        dataset_dir=valid_data_args["dataset_dir"],
+    valid_dataset = TrainNpyDataset(
+        dataset=valid_data_args["dataset"],
         limit=valid_data_args["limit"],
         offset=valid_data_args["offset"]
     )
@@ -38,8 +38,8 @@ def main(config, resume):
     )
 
     test_data_args = config["test_data"]
-    test_dataset = TrainDataset(
-        dataset_dir=test_data_args["dataset_dir"],
+    test_dataset = TrainNpyDataset(
+        dataset=test_data_args["dataset"],
         limit=test_data_args["limit"],
         offset=test_data_args["offset"],
     )
