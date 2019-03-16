@@ -72,9 +72,9 @@ def main(config, resume):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='UNet For Speech Enhancement')
-    parser.add_argument("-c", "--config", default="./config/train_config.json", type=str, help="训练配置文件")
-    parser.add_argument('-d', '--device', default=None, type=str, help="indices of GPUs to enable，e.g. '1,2,3'")
-    parser.add_argument("-r", "--resume", action="store_true", help="是否从最近的一个断点处继续训练")
+    parser.add_argument("-C", "--config", required=True, type=str, help="训练配置文件")
+    parser.add_argument('-D', '--device', default=None, type=str, help="indices of GPUs to enable，e.g. '1,2,3'")
+    parser.add_argument("-R", "--resume", action="store_true", help="是否从最近的一个断点处继续训练")
     args = parser.parse_args()
 
     if args.device:

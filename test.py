@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from data.train_dataset import TrainDataset
+from data.train_npy_dataset import TrainNpyDataset
 from models.unet import UNet
 from utils.metrics import compute_STOI, compute_PESQ
 
@@ -22,8 +22,8 @@ def load_checkpoint(checkpoints_dir, name, dev):
 
 def main(config, epoch):
     test_data_args = config["test_data"]
-    test_dataset = TrainDataset(
-        dataset=test_data_args["dataset_dir"],
+    test_dataset = TrainNpyDataset(
+        dataset=test_data_args["dataset"],
         limit=test_data_args["limit"],
         offset=test_data_args["offset"]
     )
@@ -117,7 +117,7 @@ def main(config, epoch):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="[TEST] Speech Ehancement")
-    parser.add_argument("-C", "--config", default="config/test_config.json", type=str)
+    parser.add_argument("-C", "--config", required=True, type=str)
     parser.add_argument("-E", "--epoch", default="best", help="'best' | 'latest' | int(epoch)")
     args = parser.parse_args()
 
