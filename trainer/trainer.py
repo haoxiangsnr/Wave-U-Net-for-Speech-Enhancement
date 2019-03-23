@@ -68,33 +68,10 @@ class Trainer(BaseTrainer):
 
         # https://discuss.pytorch.org/t/about-the-relation-between-batch-size-and-length-of-data-loader/10510/4
         # The length of the loader will adapt to the batch_size
-        loss_ave = loss_total / len(self.train_data_loader)
-        return loss_ave
+        dl_len = len(self.train_data_loader)
+        visualize_loss = lambda tag, total: self.viz.writer.add_scalar(f"训练损失/{tag}", total / dl_len, epoch)
+        visualize_loss("loss", loss_total)
 
-
-    def _valid_epoch(self):
-        """单次验证
-
-        包含：
-            - 设置模型运行状态
-            - 获取输入和目标
-            - 计算平均损失
-        """
-
-        self._set_model_eval()
-        loss_total = 0.0
-        with torch.no_grad():
-            for i, (data, target, basename_text) in enumerate(self.validation_data_loader):
-                data = data.to(self.dev)
-                target = target.to(self.dev)
-
-                output = self.model(data)
-                loss = self.loss_func(output, target)
-                loss_total += float(loss)
-
-        loss_ave = loss_total / len(self.validation_data_loader)
-
-        return loss_ave
 
 
     def _test_epoch(self, epoch):
@@ -105,10 +82,10 @@ class Trainer(BaseTrainer):
         """
 
         self._set_model_eval()
-        # clean_ys = []
-        # noisy_ys = []
-        # denoisy_ys = []
-        # basename_texts = []
+        stoi_c_n = []
+        stoi_c_d = []
+        pesq_c_n = []
+        pesq_c_d = []
 
         with torch.no_grad():
             for i, (data, target, basename_text) in enumerate(self.test_data_loader):
@@ -133,6 +110,27 @@ class Trainer(BaseTrainer):
 
                 self.viz.writer.add_figure(f"语音波形图像/{basename_text}", fig, epoch)
 
+                ny = data.cpu().numpy().reshape(-1)
+                dy = output.cpu().numpy().reshape(-1)
+                cy = target.cpu().numpy().reshape(-1)
+
+                stoi_c_n.append(compute_STOI(cy, ny, sr=16000))
+                stoi_c_d.append(compute_STOI(cy, dy, sr=16000))
+                pesq_c_n.append(compute_PESQ(cy, ny, sr=16000))
+                pesq_c_d.append(compute_PESQ(cy, dy, sr=16000))
+
+        get_metrics_ave = lambda metrics: np.sum(metrics) / len(metrics)
+        self.viz.writer.add_scalars(f"评价指标均值/STOI", {
+            "clean 与 noisy": get_metrics_ave(stoi_c_n),
+            "clean 与 denoisy": get_metrics_ave(stoi_c_d)
+        }, epoch)
+        self.viz.writer.add_scalars(f"评价指标均值/PESQ", {
+            "clean 与 noisy": get_metrics_ave(pesq_c_n),
+            "clean 与 denoisy": get_metrics_ave(pesq_c_d)
+        }, epoch)
+
+        score = (get_metrics_ave(stoi_c_d) + self._transform_pesq_range(get_metrics_ave(pesq_c_d))) / 2
+        return score
 
     def _transform_pesq_range(self, pesq_score):
         """平移 PESQ 评价指标
@@ -148,22 +146,8 @@ class Trainer(BaseTrainer):
         return (pesq_score + 0.5) * 2 / 10
 
 
-    def _visualization_epoch(self):
-        """定义需要可视化的项"""
-        self.viz.visualize_factors()
-        self.viz.visualize_metrics()
-        self.viz.visualize_wav_files()
-        self.viz.visualize_wav_waveform()
-        self.viz.visualize_mel_spectrograms()
-
-
-    def _is_best_score(self, metrics):
+    def _is_best_score(self, score):
         """检查当前的结果是否为最佳模型"""
-        stoi_score = np.mean(np.array(metrics["stoi"]["clean_and_denoisy_values"]))
-        pesq_score = np.mean(np.array(metrics["pesq"]["clean_and_denoisy_values"]))
-
-        score = (stoi_score + self._transform_pesq_range(pesq_score)) / 2
-
         if score >= self.best_score:
             self.best_score = score
             return True
@@ -177,18 +161,13 @@ class Trainer(BaseTrainer):
             timer = ExecutionTime()
             self.viz.set_epoch(epoch)
 
-            train_loss = self._train_epoch()
-            print("训练损失：", train_loss)
-            self.viz.writer.add_scalar("训练损失", train_loss, epoch)
-            valid_loss = self._valid_epoch()
-            self.viz.writer.add_scalar("验证损失", valid_loss, epoch)
+            self._train_epoch()
 
             # 测试一轮，并绘制波形文件
-            self._test_epoch(epoch)
+            score = self._test_epoch(epoch)
 
-            if train_loss < self.mini_loss:
-                self._save_checkpoint(epoch, save_best=True)
-                self.mini_loss = train_loss
+            if self._is_best_score(score):
+                self._save_checkpoint(epoch, is_best=True)
 
             if epoch % self.save_period == 0:
                 self._save_checkpoint(epoch)

@@ -33,9 +33,8 @@ class BaseTrainer:
         self.loss_func = loss_func
         self.epochs = config["trainer"]["epochs"]
         self.save_period = config["trainer"]["save_period"]
-        self.start_epoch = 0  # 非配置项，当 resume == True 时，参数会被重置
+        self.start_epoch = 1  # 非配置项，当 resume == True 时，参数会被重置
         self.best_score = 0.0  # 非配置项
-        self.mini_loss = 1000
         self.root_dir = Path(config["save_location"]) / config["name"]
         self.checkpoints_dir = self.root_dir / "checkpoints"
         self.tensorboardX_logs_dir = self.root_dir / "logs"
@@ -78,7 +77,7 @@ class BaseTrainer:
             print(f"{latest_model_path} 不存在，无法加载最近一次保存的模型断点")
 
 
-    def _save_checkpoint(self, epoch, save_best=False):
+    def _save_checkpoint(self, epoch, is_best=False):
         """存储模型断点
 
         将模型断点存储至 checkpoints 目录，包含：
@@ -89,7 +88,7 @@ class BaseTrainer:
 
         Args:
             epoch:
-            save_best:
+            is_best:
 
         """
 
@@ -109,7 +108,7 @@ class BaseTrainer:
         # 存储三个数据字典
         torch.save(state_dict, (self.checkpoints_dir / "latest_model.tar").as_posix())
         torch.save(state_dict, (self.checkpoints_dir / f"model_{str(epoch).zfill(3)}.tar").as_posix())
-        if save_best:
+        if is_best:
             print("发现最优模型，正在存储中， epoch = {} ...".format(epoch))
             torch.save(state_dict, (self.checkpoints_dir / "best_model.tar").as_posix())
 

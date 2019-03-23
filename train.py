@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import torch
+import numpy as np
 from torch.utils.data import DataLoader
 
 from data.train_npy_dataset import TrainNpyDataset
@@ -9,6 +10,8 @@ from models.unet import UNet
 import models.loss as model_loss
 from trainer.trainer import Trainer
 
+torch.manual_seed(0)
+np.random.seed(0)
 
 def main(config, resume):
     train_data_args = config["train_data"]
