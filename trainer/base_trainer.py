@@ -169,7 +169,7 @@ class BaseTrainer:
         return device
 
 
-    def _train_epoch(self):
+    def _train_epoch(self, epoch):
         raise NotImplementedError
 
 

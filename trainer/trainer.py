@@ -41,7 +41,7 @@ class Trainer(BaseTrainer):
         self.model.eval()
 
 
-    def _train_epoch(self):
+    def _train_epoch(self, epoch):
         """定义单次训练
 
         定义单词训练，包含
@@ -161,9 +161,10 @@ class Trainer(BaseTrainer):
             timer = ExecutionTime()
             self.viz.set_epoch(epoch)
 
-            self._train_epoch()
+            self._train_epoch(epoch)
 
             # 测试一轮，并绘制波形文件
+            print(f"[{timer.duration()} seconds] 训练结束，开始计算评价指标...")
             score = self._test_epoch(epoch)
 
             if self._is_best_score(score):
@@ -173,42 +174,3 @@ class Trainer(BaseTrainer):
                 self._save_checkpoint(epoch)
 
             print(f"[{timer.duration()} seconds] 完成当前 Epoch.")
-
-
-    @staticmethod
-    def _eval_metrics(clean_signals, denoisy_signals, noisy_signals, sr=16000):
-        """
-        stoi: 0 ~ 1
-        pesq: -0.5 ~ 4.5，从 -0.5 ~ 4.5 的取值范围
-
-        Args:
-            noisy (1D ndarray): 纯净语音的信号
-            denoisy (1D ndarray): 降噪语音的信号（或带噪）
-            sr (1D ndarray): 采样率，默认值为 16000
-
-        Returns:
-            返回评价结果将直接送到可视化工具中可视化
-        """
-        print("正在计算评价指标（eavl_metrics）... ")
-        stoi_clean_and_noisy_values = []
-        stoi_clean_and_denoisy_values = []
-        pesq_clean_and_noisy_values = []
-        pesq_clean_and_denoisy_values = []
-
-        for clean, denoisy, noisy in zip(clean_signals, denoisy_signals, noisy_signals):
-            stoi_clean_and_noisy_values.append(compute_STOI(clean, noisy, sr=sr))
-            stoi_clean_and_denoisy_values.append(compute_STOI(clean, denoisy, sr=sr))
-
-            pesq_clean_and_noisy_values.append(compute_PESQ(clean, noisy, sr=sr))
-            pesq_clean_and_denoisy_values.append(compute_PESQ(clean, denoisy, sr=sr))
-
-        return {
-            "stoi": {
-                "clean_and_noisy_values": stoi_clean_and_noisy_values,
-                "clean_and_denoisy_values": stoi_clean_and_denoisy_values,
-            },
-            "pesq": {
-                "clean_and_noisy_values": pesq_clean_and_noisy_values,
-                "clean_and_denoisy_values": pesq_clean_and_denoisy_values,
-            },
-        }

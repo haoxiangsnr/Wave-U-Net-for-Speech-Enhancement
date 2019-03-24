@@ -2,6 +2,7 @@
     "name": "add_metrics",
     "n_gpu": 1,
     "use_cudnn": true,
+    "loss_func": "mse_loss",
     "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet",
     "train_data": {
         "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15_800_900/train.npy",
@@ -27,7 +28,7 @@
         "lr": 0.0002
     },
     "trainer": {
-        "epochs": 300,
+        "epochs": 600,
         "save_period": 3
     },
     "lr_scheduler": {
