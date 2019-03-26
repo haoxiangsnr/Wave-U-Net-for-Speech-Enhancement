@@ -6,7 +6,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 
 from data.train_npy_dataset import TrainNpyDataset
-from models.unet import UNet
+import models as model_arch
 import models.loss as model_loss
 from trainer.trainer import Trainer
 
@@ -53,7 +53,7 @@ def main(config, resume):
         num_workers=1
     )
 
-    model = UNet()
+    model = getattr(model_arch, config["model_arch"])
 
     optimizer = torch.optim.Adam(
         params=model.parameters(),
