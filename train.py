@@ -5,7 +5,7 @@ import torch
 import numpy as np
 from torch.utils.data import DataLoader
 
-from data.train_npy_dataset import TrainNpyDataset
+import data.train_dataset
 import models as model_arch
 import models.loss as model_loss
 from trainer.trainer import Trainer
@@ -14,6 +14,12 @@ torch.manual_seed(0)
 np.random.seed(0)
 
 def main(config, resume):
+    train_dataset
+    TrainDataset = getattr(datasets, "train_dataset")
+    if config["use_npy"]:
+        train_dataset_dir = os.path.join(config["dataset"],)
+
+
     train_data_args = config["train_data"]
     train_dataset = TrainNpyDataset(
         dataset=train_data_args["dataset"],
@@ -53,7 +59,7 @@ def main(config, resume):
         num_workers=1
     )
 
-    model = getattr(model_arch, config["model_arch"])
+    model = getattr(model_arch, config["model_arch"]).UNet()
 
     optimizer = torch.optim.Adam(
         params=model.parameters(),

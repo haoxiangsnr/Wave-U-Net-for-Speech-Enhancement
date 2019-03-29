@@ -4,9 +4,9 @@ import torch.nn.functional as F
 import numpy as np
 
 
-class Unet(nn.Module):
+class UNet(nn.Module):
     def __init__(self, nefilters=24):
-        super(Unet, self).__init__()
+        super(UNet, self).__init__()
         print('random unet')
         nlayers = 12
         self.num_layers = nlayers
@@ -66,9 +66,12 @@ class Unet(nn.Module):
         )
 
 
-    def forward(self, x, randint):
-        encoder = list()
+    def forward(self, x, randint=None):
+        if not randint:
+            randint = np.random.randint(0, 3)
+
         input = x
+        encoder = list()
         for i in range(self.num_layers):
             # print(randint)
             x = self.encoder[int(randint[i])][i](x)

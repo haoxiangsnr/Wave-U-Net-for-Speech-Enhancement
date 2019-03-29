@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from data.train_npy_dataset import TrainNpyDataset
+from data.test_npy_dataset import TestNpyDataset
 from models.unet import UNet
 from utils.metrics import compute_STOI, compute_PESQ
 
@@ -22,7 +22,7 @@ def load_checkpoint(checkpoints_dir, name, dev):
 
 def main(config, epoch):
     test_data_args = config["test_data"]
-    test_dataset = TrainNpyDataset(
+    test_dataset = TestNpyDataset(
         dataset=test_data_args["dataset"],
         limit=test_data_args["limit"],
         offset=test_data_args["offset"]

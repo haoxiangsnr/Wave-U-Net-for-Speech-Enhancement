@@ -1,12 +1,13 @@
 {
-    "name": "add_metrics",
+    "name": "fixed_dilation",
     "n_gpu": 1,
     "use_cudnn": true,
     "loss_func": "mse_loss",
-    "model_arch": "unet",
+    "model_arch": "unet_with_dilation",
     "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet",
+    "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15_800_900/",
+    "use_npy": true,
     "train_data": {
-        "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15_800_900/train.npy",
         "limit": 9000,
         "offset": 0,
         "batch_size": 150,
@@ -14,14 +15,12 @@
         "num_workers": 40
     },
     "valid_data": {
-        "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15_800_900/train.npy",
         "limit": 400,
         "offset": 9000,
         "batch_size": 400,
         "num_workers": 40
     },
     "test_data": {
-        "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15_800_900/test.npy",
         "limit": 100,
         "offset": 44000
     },
@@ -29,7 +28,7 @@
         "lr": 0.0002
     },
     "trainer": {
-        "epochs": 300,
+        "epochs": 600,
         "save_period": 3
     },
     "lr_scheduler": {
