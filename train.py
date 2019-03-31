@@ -14,15 +14,14 @@ torch.manual_seed(0)
 np.random.seed(0)
 
 def main(config, resume):
-    train_dataset
-    TrainDataset = getattr(datasets, "train_dataset")
     if config["use_npy"]:
-        train_dataset_dir = os.path.join(config["dataset"],)
-
+        TrainDataset = data.train_dataset.TrainNpyDataset
+    else:
+        TrainDataset = data.train_dataset.TrainDataset
 
     train_data_args = config["train_data"]
-    train_dataset = TrainNpyDataset(
-        dataset=train_data_args["dataset"],
+    train_dataset = TrainDataset(
+        dataset=config["dataset"],
         limit=train_data_args["limit"],
         offset=train_data_args["offset"]
     )
@@ -35,8 +34,8 @@ def main(config, resume):
     )
 
     valid_data_args = config["valid_data"]
-    valid_dataset = TrainNpyDataset(
-        dataset=valid_data_args["dataset"],
+    valid_dataset = TrainDataset(
+        dataset=config["dataset"],
         limit=valid_data_args["limit"],
         offset=valid_data_args["offset"]
     )
@@ -48,10 +47,11 @@ def main(config, resume):
     )
 
     test_data_args = config["test_data"]
-    test_dataset = TrainNpyDataset(
-        dataset=test_data_args["dataset"],
+    test_dataset = TrainDataset(
+        dataset=config["dataset"],
         limit=test_data_args["limit"],
         offset=test_data_args["offset"],
+        for_train=False
     )
     test_data_loader = DataLoader(
         dataset=test_dataset,

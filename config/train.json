@@ -1,9 +1,9 @@
 {
-    "name": "fixed_dilation",
+    "name": "unet_with_diff_dilation",
     "n_gpu": 1,
     "use_cudnn": true,
     "loss_func": "mse_loss",
-    "model_arch": "unet_with_dilation",
+    "model_arch": "unet_with_diff_dilation",
     "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet",
     "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15_800_900/",
     "use_npy": true,

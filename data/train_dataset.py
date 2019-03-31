@@ -11,7 +11,7 @@ class TrainNpyDataset(Dataset):
     定义训练集
     """
 
-    def __init__(self, dataset, limit=10, offset=0):
+    def __init__(self, dataset, limit=10, offset=0, for_train=True):
         """
         构建训练数据集
         Args:
@@ -19,6 +19,8 @@ class TrainNpyDataset(Dataset):
             limit (int): 数据集的数量上限
             offset (int): 数据集的起始位置的偏移值
         """
+        mark = "train.npy" if for_train else "test.npy"
+        dataset = os.path.join(dataset, mark)
         assert Path(dataset).exists(), f"数据集 {dataset} 不存在"
 
         print(f"Loading NPY dataset {dataset} ...")
@@ -64,7 +66,7 @@ class TrainDataset(Dataset):
     定义训练集
     """
 
-    def __init__(self, dataset, limit=10, offset=0):
+    def __init__(self, dataset, limit=10, offset=0, for_train=True):
         """
         构建训练数据集
         Args:
@@ -72,8 +74,9 @@ class TrainDataset(Dataset):
             limit (int): 数据集的数量上限
             offset (int): 数据集的起始位置的偏移值
         """
-        noisy_dir = Path(dataset) / "noisy"
-        clean_dir = Path(dataset) / "clean"
+        mark = "train" if for_train else "test"
+        noisy_dir = Path(dataset) / mark / "noisy"
+        clean_dir = Path(dataset) / mark /"clean"
 
         assert noisy_dir.exists(), "数据目录下必须包含 noisy 子目录"
         assert clean_dir.exists(), "数据目录下必须包含 clean 子目录"
