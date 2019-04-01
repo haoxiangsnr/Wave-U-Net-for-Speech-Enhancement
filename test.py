@@ -7,9 +7,8 @@ import tablib
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-
-from data.test_npy_dataset import TestNpyDataset
-from models.unet import UNet
+from data.test_dataset import TestNpyDataset
+import models as model_arch
 from utils.metrics import compute_STOI, compute_PESQ
 
 
@@ -23,7 +22,7 @@ def load_checkpoint(checkpoints_dir, name, dev):
 def main(config, epoch):
     test_data_args = config["test_data"]
     test_dataset = TestNpyDataset(
-        dataset=test_data_args["dataset"],
+        dataset=config["dataset"],
         limit=test_data_args["limit"],
         offset=test_data_args["offset"]
     )
@@ -34,7 +33,7 @@ def main(config, epoch):
     )
 
     dev = torch.device("cpu")
-    model = UNet()
+    model = getattr(model_arch, config["model_arch"]).UNet()
 
     root_dir = Path(config["save_location"]) / config["name"]
     checkpoints_dir = root_dir / "checkpoints"
@@ -43,17 +42,17 @@ def main(config, epoch):
         if epoch == "latest":
             checkpoint = load_checkpoint(checkpoints_dir, "latest_model.tar", dev)
             model_state_dict = checkpoint["model_state_dict"]
-            print(f"Load latest checkpoints, is {checkpoint['epoch']}")
+            print(f"Load latest checkpoints, is {checkpoint['epoch']}.")
         elif epoch == "best":
             checkpoint = load_checkpoint(checkpoints_dir, "best_model.tar", dev)
             model_state_dict = checkpoint["model_state_dict"]
-            print(f"Load best checkpoints, is {checkpoint['epoch']}")
+            print(f"Load best checkpoints, is {checkpoint['epoch']}.")
         else:
-            raise ValueError(f"指定的 epoch 参数存在问题，epoch 为 {epoch}.")
+            checkpoint = load_checkpoint(checkpoints_dir, f"model_{str(epoch).zfill(3)}.tar", dev)
+            model_state_dict = checkpoint["model_state_dict"]
+            print(f"Load checkpoints is {epoch}.")
     else:
-        checkpoint = load_checkpoint(checkpoints_dir, "latest_model.tar", dev)
-        model_state_dict = checkpoint["model_state_dict"]
-        print(f"Load latest checkpoints, is {epoch}")
+        raise ValueError(f"指定的 epoch 参数存在问题，epoch 为 {epoch}.")
 
     if isinstance(model, torch.nn.DataParallel):
         model.module.load_state_dict(model_state_dict)

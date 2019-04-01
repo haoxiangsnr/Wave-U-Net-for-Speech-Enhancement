@@ -4,9 +4,9 @@ import torch.nn.functional as F
 import numpy as np
 
 
-class Unet(nn.Module):
+class UNet(nn.Module):
     def __init__(self,nefilters=24):
-        super(Unet, self).__init__()
+        super(UNet, self).__init__()
         print('pyramid unet')
         nlayers = 12
         self.num_layers = nlayers
