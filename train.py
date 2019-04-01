@@ -6,6 +6,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 
 import data.train_dataset
+import data.test_dataset
 import models as model_arch
 import models.loss as model_loss
 from trainer.trainer import Trainer
@@ -16,8 +17,10 @@ np.random.seed(0)
 def main(config, resume):
     if config["use_npy"]:
         TrainDataset = data.train_dataset.TrainNpyDataset
+        TestDataset = data.test_dataset.TestNpyDataset
     else:
         TrainDataset = data.train_dataset.TrainDataset
+        TestDataset = data.test_dataset.TestDataset
 
     train_data_args = config["train_data"]
     train_dataset = TrainDataset(
@@ -47,11 +50,10 @@ def main(config, resume):
     )
 
     test_data_args = config["test_data"]
-    test_dataset = TrainDataset(
+    test_dataset = TestDataset(
         dataset=config["dataset"],
         limit=test_data_args["limit"],
         offset=test_data_args["offset"],
-        for_train=False
     )
     test_data_loader = DataLoader(
         dataset=test_dataset,
