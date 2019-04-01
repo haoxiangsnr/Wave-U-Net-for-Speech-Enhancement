@@ -40,6 +40,7 @@ class BaseTrainer:
         self.tensorboardX_logs_dir = self.root_dir / "logs"
         self._prepare_empty_dir([self.root_dir, self.checkpoints_dir, self.tensorboardX_logs_dir], resume)
         self.viz = TensorboardXWriter(self.tensorboardX_logs_dir.as_posix())
+        self.viz.writer.add_text("Configuration", json.dumps(config, indent=2, sort_keys=False), global_step=1)
 
         if resume: self._resume_checkpoint()
 
