@@ -6,13 +6,15 @@ End to end speech enhancement
 
 ```json
 {
-    "name": "chime",
+    "name": "chime_v2",
     "n_gpu": 1,
     "use_cudnn": true,
     "loss_func": "mse_loss",
     "model_arch": "unet_with_diff_dilation",
     "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet",
     "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/chime/",
+    "description": "上次训练 **chime_v2** 数据失败了，本次继续训练，使用 xshell，并使用 xshell 测试",
+    "visualize_metrics": false,
     "use_npy": true,
     "train_data": {
         "limit": 0,

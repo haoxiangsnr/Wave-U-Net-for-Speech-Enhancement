@@ -97,5 +97,6 @@ if __name__ == '__main__':
 
     # load config file
     config = json.load(open(args.config))
+    config["train_config_path"] = args.config
 
     main(config, resume=args.resume)

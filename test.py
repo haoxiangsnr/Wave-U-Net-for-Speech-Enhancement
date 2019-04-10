@@ -29,7 +29,7 @@ def main(config, epoch):
     test_data_loader = DataLoader(
         dataset=test_dataset,
         batch_size=1,
-        num_workers=1,
+        num_workers=1
     )
 
     dev = torch.device("cpu")

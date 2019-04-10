@@ -1,0 +1,10 @@
+{
+    "name": "unet_basic",
+    "model_arch": "unet",
+    "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet",
+    "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15_800_900",
+    "test_data": {
+        "limit": 0,
+        "offset": 44000
+    }
+}

@@ -43,7 +43,6 @@ class TrainNpyDataset(Dataset):
         return self.length
 
     def __getitem__(self, item):
-        np.random.seed(0)
         sample_length = 16384
 
         key = self.keys[item]
@@ -97,7 +96,6 @@ class TrainDataset(Dataset):
         return self.length
 
     def __getitem__(self, item):
-        np.random.seed(0)
         sr = 16000
         sample_length = 16384
 

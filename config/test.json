@@ -1,9 +1,0 @@
-{
-    "name": "add_metrics",
-    "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet",
-    "test_data": {
-        "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_1200_1500/test.npy",
-        "limit": 10000,
-        "offset": 44000
-    }
-}

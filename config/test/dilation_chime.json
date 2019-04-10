@@ -1,5 +1,5 @@
 {
-    "name": "chime",
+    "name": "chime_v2",
     "model_arch": "unet_with_diff_dilation",
     "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet",
     "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/chime",

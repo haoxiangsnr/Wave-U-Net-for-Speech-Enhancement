@@ -1,16 +1,18 @@
 {
-    "name": "unet_debug",
+    "name": "unet_basic",
     "n_gpu": 1,
     "use_cudnn": true,
     "loss_func": "mse_loss",
     "model_arch": "unet",
     "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet",
-    "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15_800_900/",
-    "use_npy": false,
+    "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15_800_900",
+    "description": "基础的UNet，去掉了所有的随机参数",
+    "visualize_metrics_period": 10,
+    "use_npy": true,
     "train_data": {
-        "limit": 100,
+        "limit": 0,
         "offset": 0,
-        "batch_size": 100,
+        "batch_size": 170,
         "shuffle": true,
         "num_workers": 40
     },
@@ -21,14 +23,14 @@
         "num_workers": 40
     },
     "test_data": {
-        "limit": 100,
-        "offset": 44000
+        "limit": 200,
+        "offset": 0
     },
     "optimizer": {
         "lr": 0.0002
     },
     "trainer": {
-        "epochs": 600,
+        "epochs": 1000,
         "save_period": 3
     },
     "lr_scheduler": {
