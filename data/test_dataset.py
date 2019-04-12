@@ -1,15 +1,18 @@
-import numpy as np
 import os
 from pathlib import Path
 
 import librosa
+import numpy as np
 from torch.utils.data import Dataset
-from utils.utils import find_aligned_wav_files, sample_fixed_length_data_aligned
+
+from utils.utils import find_aligned_wav_files
+
 
 class TestNpyDataset(Dataset):
     """
     定义训练集
     """
+
 
     def __init__(self, dataset, limit=10, offset=0):
         """
@@ -23,7 +26,7 @@ class TestNpyDataset(Dataset):
         assert Path(dataset).exists(), f"数据集 {dataset} 不存在"
 
         print(f"Loading NPY dataset {dataset} ...")
-        self.dataset_dict:dict = np.load(dataset).item()
+        self.dataset_dict: dict = np.load(dataset).item()
 
         print(f"The len of full dataset is {len(self.dataset_dict)}.")
         print(f"The limit is {limit}.")
@@ -39,8 +42,10 @@ class TestNpyDataset(Dataset):
         self.length = len(self.keys)
         print(f"Finish, len(finial dataset) == {self.length}.")
 
+
     def __len__(self):
         return self.length
+
 
     def __getitem__(self, item):
         sample_length = 16384
@@ -53,9 +58,6 @@ class TestNpyDataset(Dataset):
 
         assert noisy_y.shape == clean_y.shape
 
-        # 定长采样
-        noisy_y, clean_y = sample_fixed_length_data_aligned(noisy_y, clean_y, sample_length)
-
         return noisy_y.reshape(1, -1), clean_y.reshape(1, -1), key
 
 
@@ -63,6 +65,7 @@ class TestDataset(Dataset):
     """
     定义训练集
     """
+
 
     def __init__(self, dataset, limit=10, offset=0):
         """
@@ -73,8 +76,7 @@ class TestDataset(Dataset):
             offset (int): 数据集的起始位置的偏移值
         """
         noisy_dir = Path(dataset) / "test" / "noisy"
-        clean_dir = Path(dataset) / "test" /"clean"
-
+        clean_dir = Path(dataset) / "test" / "clean"
 
         assert noisy_dir.exists(), "数据目录下必须包含 noisy 子目录"
         assert clean_dir.exists(), "数据目录下必须包含 clean 子目录"
@@ -83,12 +85,13 @@ class TestDataset(Dataset):
             noisy_dir.as_posix(), clean_dir.as_posix(), limit=limit, offset=offset
         )
 
+
     def __len__(self):
         return self.length
 
+
     def __getitem__(self, item):
         sr = 16000
-        sample_length = 16384
 
         noisy_wav_path = self.noisy_wav_paths[item]
         clean_wav_path = self.clean_wav_paths[item]
@@ -97,8 +100,5 @@ class TestDataset(Dataset):
         clean_y, _ = librosa.load(clean_wav_path, sr=sr)
 
         basename_text, _ = os.path.splitext(os.path.basename(noisy_wav_path))
-
-        # 定长采样
-        noisy_y, clean_y = sample_fixed_length_data_aligned(noisy_y, clean_y, sample_length)
 
         return noisy_y.reshape(1, -1), clean_y.reshape(1, -1), basename_text

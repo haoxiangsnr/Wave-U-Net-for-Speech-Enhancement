@@ -3,14 +3,16 @@ import json
 from pathlib import Path
 
 import librosa
-import tablib
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from data.test_dataset import TestNpyDataset
-import models as model_arch
-from utils.metrics import compute_STOI, compute_PESQ
 
+import models as model_arch
+from data.test_dataset import TestNpyDataset
+
+def pad_last(data, size):
+    need = size - data.shape[2]
+    return torch.cat((data, torch.zeros((1, 1, need))), dim=2)
 
 def load_checkpoint(checkpoints_dir, name, dev):
     checkpoint_path = checkpoints_dir / name
@@ -63,61 +65,38 @@ def main(config, epoch):
     model.load_state_dict(model_state_dict)
     model.eval()
 
-    print("加载模型成功，开始计算评价指标.")
-
     results_dir = root_dir / f"{config['name']}_{epoch}_results"
     results_dir.mkdir(parents=False, exist_ok=True)
 
-    headers = ("语音编号", "噪声类型", "信噪比",
-               "STOI 纯净与带噪", "STOI 纯净与降噪 ",
-               "PESQ 纯净与带噪", "PESQ 纯净与降噪",
-               "STOI 提升",
-               "PESQ 提升")  # 定义导出为 Excel 文件的格式
-    metrics_seq = []
-
     with torch.no_grad():
-        for i, (ny, cy, basename_text) in tqdm(enumerate(test_data_loader), desc="正在计算评价指标中："):
+        for i, (ny, cy, basename_text) in tqdm(enumerate(test_data_loader), desc="增强中"):
             basename_text = basename_text[0]
-            dy = model(ny)
+            ny_list = list(torch.split(ny, 16384, dim=2))
+            last_one = pad_last(ny_list[-1], 16384)
+            ny_list[-1] = last_one
+
+            dy_list = [model(y) for y in ny_list]
+            dy = torch.cat(tuple(dy_list), 2)
 
             dy = dy.numpy().reshape(-1)
             ny = ny.numpy().reshape(-1)
             cy = cy.numpy().reshape(-1)
 
-            stoi_c_n = compute_STOI(cy, ny, sr=16000)
-            stoi_c_d = compute_STOI(cy, dy, sr=16000)
-            pesq_c_n = compute_PESQ(cy, ny, sr=16000)
-            pesq_c_d = compute_PESQ(cy, dy, sr=16000)
-
-            num, noise, snr = basename_text.split("_")
-            metrics_seq.append((
-                num, noise, snr,
-                stoi_c_n, stoi_c_d,
-                pesq_c_n, pesq_c_d,
-                (stoi_c_d - stoi_c_n) / stoi_c_n,
-                (pesq_c_d - pesq_c_n) / pesq_c_n
-            ))
-
             for type in ["clean", "denoisy", "noisy"]:
-                output_path = results_dir / f"{basename_text}_{type}.wav"
+                (results_dir / type).mkdir(exist_ok=True)
+                output_path = results_dir / type / f"{basename_text}.wav"
                 if type == "clean":
                     librosa.output.write_wav(output_path.as_posix(), cy, 16000)
                 elif type == "denoisy":
-                    librosa.output.write_wav(output_path.as_posix(), dy, 16000)
+                    librosa.output.write_wav(output_path.as_posix(), dy[:len(cy)], 16000)
                 else:
                     librosa.output.write_wav(output_path.as_posix(), ny, 16000)
 
-    data = tablib.Dataset(*metrics_seq, headers=headers)
-    metrics_save_dir = root_dir / f"{config['name']}_{epoch}.xls"
-    print(f"测试过程结束，正在将结果存储至 {metrics_save_dir.as_posix()}")
-    with open(metrics_save_dir.as_posix(), 'wb') as f:
-        f.write(data.export('xls'))
-
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="[TEST] Speech Ehancement")
+    parser = argparse.ArgumentParser(description="[TEST] Speech Enhancement")
     parser.add_argument("-C", "--config", required=True, type=str)
-    parser.add_argument("-E", "--epoch", default="best", help="'best' | 'latest' | int(epoch)")
+    parser.add_argument("-E", "--epoch", default="best", help="'best' | 'latest' | {epoch}")
     args = parser.parse_args()
 
     config = json.load(open(args.config))

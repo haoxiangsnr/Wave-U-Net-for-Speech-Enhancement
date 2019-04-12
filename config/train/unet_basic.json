@@ -5,7 +5,7 @@
     "loss_func": "mse_loss",
     "model_arch": "unet",
     "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet",
-    "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15_800_900",
+    "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/timit_x92_595_105",
     "description": "基础的UNet，去掉了所有的随机参数",
     "visualize_metrics_period": 10,
     "use_npy": true,

@@ -6,20 +6,20 @@ End to end speech enhancement
 
 ```json
 {
-    "name": "chime_v2",
+    "name": "unet_basic",
     "n_gpu": 1,
     "use_cudnn": true,
     "loss_func": "mse_loss",
-    "model_arch": "unet_with_diff_dilation",
+    "model_arch": "unet",
     "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet",
-    "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/chime/",
-    "description": "上次训练 **chime_v2** 数据失败了，本次继续训练，使用 xshell，并使用 xshell 测试",
-    "visualize_metrics": false,
+    "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15_800_900",
+    "description": "",
+    "visualize_metrics_period": 10,
     "use_npy": true,
     "train_data": {
         "limit": 0,
         "offset": 0,
-        "batch_size": 150,
+        "batch_size": 170,
         "shuffle": true,
         "num_workers": 40
     },
@@ -37,7 +37,7 @@ End to end speech enhancement
         "lr": 0.0002
     },
     "trainer": {
-        "epochs": 600,
+        "epochs": 1000,
         "save_period": 3
     },
     "lr_scheduler": {
@@ -52,24 +52,28 @@ End to end speech enhancement
 
 ## Test
 
-- 同时运行两个测试完全可行
-    - Wav file saved as `{save_dir} / {name}_{epoch}_{results} / {basename}_{text}_{type}.wav`
-    - Excel file saved as `{name}_{epoch}.xls`
-
 ```shell
-# 指定配置文件
+# Specify test json file
 python test.py -C config/test_diff_dilation.json
 ```
 
 ```json
 {
-    "name": "unet_with_diff_dilation",
-    "model_arch": "unet_with_diff_dilation",
+    "name": "unet_basic",
+    "model_arch": "unet",
     "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet",
     "dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/release_0_-5_-10_-15_800_900",
     "test_data": {
-        "limit": 10000,
+        "limit": 0,
         "offset": 44000
     }
 }
 ```
+
+- Wav file saved as `{save_dir} / {name}_{epoch}_{results} / {type} / {basename_text}.wav`
+- Excel file saved as `{name}_{epoch}.xls`
+
+
+## ToDo
+
+- [ ] Separate computing metrics from test script
