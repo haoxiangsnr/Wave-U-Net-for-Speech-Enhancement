@@ -1,18 +1,14 @@
-import time
-
 import librosa
 import librosa.display
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-from utils.metrics import compute_STOI, compute_PESQ
 from trainer.base_trainer import BaseTrainer
-from utils.utils import set_requires_grad, ExecutionTime
-import matplotlib.pyplot as plt
-
+from utils.metrics import compute_STOI, compute_PESQ
+from utils.utils import ExecutionTime
 
 plt.switch_backend('agg')
-
 
 class Trainer(BaseTrainer):
     def __init__(
@@ -20,16 +16,14 @@ class Trainer(BaseTrainer):
             config,
             resume: bool,
             model,
-            loss_func,
+            loss_function,
             optim,
             train_dl,
             validation_dl,
-            test_dl
     ):
-        super(Trainer, self).__init__(config, resume, model, loss_func, optim)
+        super(Trainer, self).__init__(config, resume, model, loss_function, optim)
         self.train_data_loader = train_dl
         self.validation_data_loader = validation_dl
-        self.test_data_loader = test_dl
 
 
     def _set_model_train(self):
@@ -61,7 +55,7 @@ class Trainer(BaseTrainer):
             target = target.to(self.dev)
             self.optimizer.zero_grad()
             output = self.model(data)
-            loss = self.loss_func(output, target)
+            loss = self.loss_function(output, target)
             loss_total += float(loss)
             loss.backward()
             self.optimizer.step()
@@ -71,7 +65,6 @@ class Trainer(BaseTrainer):
         dl_len = len(self.train_data_loader)
         visualize_loss = lambda tag, total: self.viz.writer.add_scalar(f"训练损失/{tag}", total / dl_len, epoch)
         visualize_loss("loss", loss_total)
-
 
 
     def _test_epoch(self, epoch):
@@ -88,7 +81,7 @@ class Trainer(BaseTrainer):
         pesq_c_d = []
 
         with torch.no_grad():
-            for i, (data, target, basename_text) in enumerate(self.test_data_loader):
+            for i, (data, target, basename_text) in enumerate(self.validation_data_loader):
                 data = data.to(self.dev)
                 target = target.to(self.dev)
                 output = self.model(data)
@@ -163,7 +156,7 @@ class Trainer(BaseTrainer):
 
             self._train_epoch(epoch)
 
-            if self.visualize_metrics_period != 0  and epoch % self.visualize_metrics_period == 0:
+            if self.visualize_metrics_period != 0 and epoch % self.visualize_metrics_period == 0:
                 # 测试一轮，并绘制波形文件
                 print(f"[{timer.duration()} seconds] 训练结束，开始计算评价指标...")
                 score = self._test_epoch(epoch)

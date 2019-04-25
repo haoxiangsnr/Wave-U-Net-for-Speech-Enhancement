@@ -1,104 +1,57 @@
-import os
 from pathlib import Path
 
-import librosa
-import numpy as np
+import deepdish as dd
 from torch.utils.data import Dataset
 
-from utils.utils import find_aligned_wav_files
-
-
-class TestNpyDataset(Dataset):
+class TestDataset(Dataset):
     """
-    定义训练集
+    定义测试集
     """
 
-
-    def __init__(self, dataset, limit=10, offset=0):
+    def __init__(self, mixture_dataset, clean_dataset, limit=None, offset=0):
         """
-        构建训练数据集
+        构建测试数据集
         Args:
-            dataset (str): 验证数据集 NPY 文件
+            mixture_dataset (str): 带噪语音数据集
+            clean_dataset (str): 纯净语音数据集
             limit (int): 数据集的数量上限
             offset (int): 数据集的起始位置的偏移值
         """
-        dataset = os.path.join(dataset, "test.npy")
-        assert Path(dataset).exists(), f"数据集 {dataset} 不存在"
+        mixture_dataset = Path(mixture_dataset)
+        clean_dataset = Path(clean_dataset)
 
-        print(f"Loading NPY dataset {dataset} ...")
-        self.dataset_dict: dict = np.load(dataset).item()
+        assert mixture_dataset.exists() and clean_dataset.exists(), "测试数据集不存在"
 
-        print(f"The len of full dataset is {len(self.dataset_dict)}.")
+        print(f"Loading mixture dataset {mixture_dataset} ...")
+        self.mixture_dataset = dd.io.load("mixture_dataset")
+        print(f"Loading clean dataset {clean_dataset} ...")
+        self.clean_dataset = dd.io.load("clean_dataset")
+        assert len(self.mixture_dataset) == len(self.clean_dataset), \
+            "mixture dataset 与 clean dataset 长度不同"
+
+        print(f"The len of fully dataset is {len(self.mixture_dataset)}.")
         print(f"The limit is {limit}.")
         print(f"The offset is {offset}.")
 
-        if limit == 0:
-            limit = len(self.dataset_dict)
+        if limit is None:
+            limit = len(self.mixture_dataset)
 
-        self.keys = list(self.dataset_dict.keys())
+        self.keys = list(self.mixture_dataset.keys())
         self.keys.sort()
         self.keys = self.keys[offset: offset + limit]
 
         self.length = len(self.keys)
         print(f"Finish, len(finial dataset) == {self.length}.")
 
-
     def __len__(self):
         return self.length
-
 
     def __getitem__(self, item):
         sample_length = 16384
 
-        key = self.keys[item]
-        value = self.dataset_dict[key]
+        name = self.keys[item]
+        mixture = self.mixture_dataset[name]
+        clean = self.clean_dataset[name]
 
-        noisy_y = value["noisy"]
-        clean_y = value["clean"]
-
-        assert noisy_y.shape == clean_y.shape
-
-        return noisy_y.reshape(1, -1), clean_y.reshape(1, -1), key
-
-
-class TestDataset(Dataset):
-    """
-    定义训练集
-    """
-
-
-    def __init__(self, dataset, limit=10, offset=0):
-        """
-        构建训练数据集
-        Args:
-            dataset (str): 验证数据集根目录，必须包含 noisy 和 clean 子目录
-            limit (int): 数据集的数量上限
-            offset (int): 数据集的起始位置的偏移值
-        """
-        noisy_dir = Path(dataset) / "test" / "noisy"
-        clean_dir = Path(dataset) / "test" / "clean"
-
-        assert noisy_dir.exists(), "数据目录下必须包含 noisy 子目录"
-        assert clean_dir.exists(), "数据目录下必须包含 clean 子目录"
-
-        self.noisy_wav_paths, self.clean_wav_paths, self.length = find_aligned_wav_files(
-            noisy_dir.as_posix(), clean_dir.as_posix(), limit=limit, offset=offset
-        )
-
-
-    def __len__(self):
-        return self.length
-
-
-    def __getitem__(self, item):
-        sr = 16000
-
-        noisy_wav_path = self.noisy_wav_paths[item]
-        clean_wav_path = self.clean_wav_paths[item]
-
-        noisy_y, _ = librosa.load(noisy_wav_path, sr=sr)
-        clean_y, _ = librosa.load(clean_wav_path, sr=sr)
-
-        basename_text, _ = os.path.splitext(os.path.basename(noisy_wav_path))
-
-        return noisy_y.reshape(1, -1), clean_y.reshape(1, -1), basename_text
+        assert mixture.shape == clean.shape
+        return mixture.reshape(1, -1), clean.reshape(1, -1), name

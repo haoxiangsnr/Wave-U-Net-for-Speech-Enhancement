@@ -1,64 +1,45 @@
 import argparse
 import json
 import os
-import torch
+
 import numpy as np
+import torch
 from torch.utils.data import DataLoader
 
-import data.train_dataset
-import data.test_dataset
 import models as model_arch
 import models.loss as model_loss
+from data.train_dataset import TrainDataset
+from data.test_dataset import TestDataset
 from trainer.trainer import Trainer
 
 torch.manual_seed(0)
 np.random.seed(0)
 
 def main(config, resume):
-    if config["use_npy"]:
-        TrainDataset = data.train_dataset.TrainNpyDataset
-        TestDataset = data.test_dataset.TestNpyDataset
-    else:
-        TrainDataset = data.train_dataset.TrainDataset
-        TestDataset = data.test_dataset.TestDataset
-
-    train_data_args = config["train_data"]
     train_dataset = TrainDataset(
-        dataset=config["dataset"],
-        limit=train_data_args["limit"],
-        offset=train_data_args["offset"]
+        mixture_dataset=config["train_dataset"]["mixture"],
+        clean_dataset=config["train_dataset"]["clean"],
+        limit=config["train_dataset"]["limit"],
+        offset=config["train_dataset"]["offset"],
     )
     train_data_loader = DataLoader(
         dataset=train_dataset,
-        batch_size=train_data_args["batch_size"],
-        num_workers=train_data_args["num_workers"],
-        shuffle=train_data_args["shuffle"],
-        pin_memory=True
+        batch_size=config["train_dataset"]["batch_size"],
+        num_workers=config["train_dataset"]["num_workers"],
+        shuffle=config["train_dataset"]["shuffle"]
     )
 
-    valid_data_args = config["valid_data"]
-    valid_dataset = TrainDataset(
-        dataset=config["dataset"],
-        limit=valid_data_args["limit"],
-        offset=valid_data_args["offset"]
+    valid_dataset = TestDataset(
+        mixture_dataset=config["valid_dataset"]["mixture"],
+        clean_dataset=config["valid_dataset"]["clean"],
+        limit=config["valid_dataset"]["limit"],
+        offset=config["valid_dataset"]["offset"],
     )
     valid_data_loader = DataLoader(
         dataset=valid_dataset,
-        batch_size=valid_data_args["batch_size"],
-        num_workers=valid_data_args["num_workers"],
-        pin_memory=True
-    )
-
-    test_data_args = config["test_data"]
-    test_dataset = TestDataset(
-        dataset=config["dataset"],
-        limit=test_data_args["limit"],
-        offset=test_data_args["offset"],
-    )
-    test_data_loader = DataLoader(
-        dataset=test_dataset,
-        batch_size=1,
-        num_workers=1
+        batch_size=config["valid_dataset"]["batch_size"],
+        num_workers=config["valid_dataset"]["num_workers"],
+        shuffle=config["valid_dataset"]["shuffle"]
     )
 
     model = getattr(model_arch, config["model_arch"]).UNet()
@@ -69,17 +50,16 @@ def main(config, resume):
         betas=(0.9, 0.999)
     )
 
-    loss_func = getattr(model_loss, config["loss_func"])
+    loss_function = getattr(model_loss, config["loss_function"])
 
     trainer = Trainer(
         config=config,
         resume=resume,
         model=model,
-        loss_func=loss_func,
+        loss_function=loss_function,
         optim=optimizer,
         train_dl=train_data_loader,
         validation_dl=valid_data_loader,
-        test_dl=test_data_loader
     )
 
     trainer.train()

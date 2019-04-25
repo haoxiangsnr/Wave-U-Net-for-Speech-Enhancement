@@ -76,4 +76,4 @@ python test.py -C config/test_diff_dilation.json
 
 ## ToDo
 
-- [ ] Separate computing metrics from test script
+- [x] Separate computing metrics from test script

@@ -10,9 +10,11 @@ from tqdm import tqdm
 import models as model_arch
 from data.test_dataset import TestNpyDataset
 
+
 def pad_last(data, size):
     need = size - data.shape[2]
     return torch.cat((data, torch.zeros((1, 1, need))), dim=2)
+
 
 def load_checkpoint(checkpoints_dir, name, dev):
     checkpoint_path = checkpoints_dir / name
@@ -42,15 +44,18 @@ def main(config, epoch):
 
     if isinstance(epoch, str):
         if epoch == "latest":
-            checkpoint = load_checkpoint(checkpoints_dir, "latest_model.tar", dev)
+            checkpoint = load_checkpoint(
+                checkpoints_dir, "latest_model.tar", dev)
             model_state_dict = checkpoint["model_state_dict"]
             print(f"Load latest checkpoints, is {checkpoint['epoch']}.")
         elif epoch == "best":
-            checkpoint = load_checkpoint(checkpoints_dir, "best_model.tar", dev)
+            checkpoint = load_checkpoint(
+                checkpoints_dir, "best_model.tar", dev)
             model_state_dict = checkpoint["model_state_dict"]
             print(f"Load best checkpoints, is {checkpoint['epoch']}.")
         else:
-            checkpoint = load_checkpoint(checkpoints_dir, f"model_{str(epoch).zfill(3)}.tar", dev)
+            checkpoint = load_checkpoint(
+                checkpoints_dir, f"model_{str(epoch).zfill(3)}.tar", dev)
             model_state_dict = checkpoint["model_state_dict"]
             print(f"Load checkpoints is {epoch}.")
     else:
@@ -88,7 +93,8 @@ def main(config, epoch):
                 if type == "clean":
                     librosa.output.write_wav(output_path.as_posix(), cy, 16000)
                 elif type == "denoisy":
-                    librosa.output.write_wav(output_path.as_posix(), dy[:len(cy)], 16000)
+                    librosa.output.write_wav(
+                        output_path.as_posix(), dy[:len(cy)], 16000)
                 else:
                     librosa.output.write_wav(output_path.as_posix(), ny, 16000)
 
@@ -96,7 +102,8 @@ def main(config, epoch):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="[TEST] Speech Enhancement")
     parser.add_argument("-C", "--config", required=True, type=str)
-    parser.add_argument("-E", "--epoch", default="best", help="'best' | 'latest' | {epoch}")
+    parser.add_argument("-E", "--epoch", default="best",
+                        help="'best' | 'latest' | {epoch}")
     args = parser.parse_args()
 
     config = json.load(open(args.config))
