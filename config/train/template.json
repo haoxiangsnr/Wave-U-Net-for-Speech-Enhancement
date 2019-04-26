@@ -1,14 +1,14 @@
 {
-    "name": "实验名",
+    "name": "必填",
     "n_gpu": 1,
     "use_cudnn": true,
-    "model": "unet",
+    "model": "必填",
     "loss_function": "mse_loss",
     "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/DNN",
-    "description": "...",
+    "description": "必填",
     "visualize_metrics_period": 5,
     "optimizer": {
-        "lr": 0.01
+        "lr": 0.001
     },
     "trainer": {
         "epochs": 1000,
@@ -21,12 +21,12 @@
         "offset": 0,
         "shuffle": true,
         "num_workers": 40,
-        "batch_size": 200000
+        "batch_size": 150
     },
     "valid_dataset": {
         "mixture": "/home/imucs/Center/timit_waveform_192/test/mixture.npy",
         "clean": "/home/imucs/Center/timit_waveform_192/test/clean.npy",
-        "limit": null,
+        "limit": "必填，null 表示无上限",
         "offset": 0,
         "batch_size": 1,
         "num_workers": 1
