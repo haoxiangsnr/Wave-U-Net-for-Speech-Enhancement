@@ -1,14 +1,14 @@
 {
-    "name": "unet_basic_noise_7_clean_900",
+    "name": "unet_basic_lr001",
     "n_gpu": 1,
     "use_cudnn": true,
     "model": "unet_basic",
     "loss_function": "mse_loss",
     "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet",
-    "description": "...",
+    "description": "学习率修改为0.001",
     "visualize_metrics_period": 5,
     "optimizer": {
-        "lr": 0.01
+        "lr": 0.001
     },
     "trainer": {
         "epochs": 1000,

@@ -89,7 +89,7 @@ def sample_fixed_length_data_aligned(data_a, data_b, sample_length):
     frames_total = len(data_a)
 
     start = np.random.randint(frames_total - sample_length + 1)
-    print(f"Random crop from: {start}")
+    # print(f"Random crop from: {start}")
     end = start + sample_length
 
     return data_a[start:end], data_b[start:end]

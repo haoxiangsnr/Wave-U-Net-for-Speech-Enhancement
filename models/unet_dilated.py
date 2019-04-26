@@ -1,59 +1,106 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 
 
-class UnetD(nn.Module):
-    def __init__(self,nefilters=24):
-        super(UnetD, self).__init__()
-        nlayers = 12
-        self.num_layers = nlayers
-        self.nefilters = nefilters
-        filter_size = 15
-        merge_filter_size = 5
-        self.upsampling = 'linear'
-        self.output_type = 'difference'
-        self.context = True
-        self.encoder = nn.ModuleList()
-        self.decoder = nn.ModuleList()
-        self.ebatch = nn.ModuleList()
-        self.dbatch = nn.ModuleList()
-        echannelin = [1] + [(i + 1) * nefilters for i in range(nlayers-1)]
-        echannelout = [(i + 1) * nefilters for i in range(nlayers)]
-        dchannelout = echannelout[::-1]
-        dchannelin = [dchannelout[0]*2]+[(i) * nefilters + (i - 1) * nefilters for i in range(nlayers,1,-1)]
-        for i in range(self.num_layers):
-            self.encoder.append(nn.Conv1d(echannelin[i],echannelout[i],filter_size,dilation=2,padding=filter_size//2*2))
-            self.decoder.append(nn.Conv1d(dchannelin[i],dchannelout[i],merge_filter_size,padding=merge_filter_size//2))
-            self.ebatch.append(nn.BatchNorm1d(echannelout[i]))
-            self.dbatch.append(nn.BatchNorm1d(dchannelout[i]))
-        self.middle=nn.Conv1d(echannelout[-1],echannelout[-1],filter_size,padding=filter_size//2)
-        self.out = nn.Conv1d(nefilters+1,1,1)
-    def forward(self,x):
-        encoder = list()
-        input = x
-        for i in range(self.num_layers):
-            x = self.encoder[i](x)
-            x = self.ebatch[i](x)
-            x = F.leaky_relu(x,0.1)
-            encoder.append(x)
-            x = x[:,:,::2]
-        x = self.middle(x)
-        x = F.leaky_relu(x, 0.1)
-        #print(x.shape)
-        for i in range(self.num_layers):
-            #print(x.shape)
-            #x = torch.unsqueeze(x, 2)
-            #print(x.shape)
-            x = F.upsample(x,scale_factor=2,mode='linear')
-            #print(i,x.shape,encoder[self.num_layers - i - 1].shape)
-            #x = torch.squeeze(x, 2)
-            x = torch.cat([x,encoder[self.num_layers - i - 1]],dim=1)
-            x = self.decoder[i](x)
-            x = self.dbatch[i](x)
-            x = F.leaky_relu(x,0.1)
-        x = torch.cat([x,input],dim=1)
-        x = self.out(x)
-        x = F.tanh(x)
-        return x
+class DownSamplingLayer(nn.Module):
+    def __init__(self, channel_in, channel_out, dilation=1, kernel_size=15, stride=1, padding=7):
+        super(DownSamplingLayer, self).__init__()
+        self.main = nn.Sequential(
+            nn.Conv1d(channel_in, channel_out, kernel_size=kernel_size,
+                      stride=stride, padding=padding, dilation=dilation),
+            nn.BatchNorm1d(channel_out),
+            nn.LeakyReLU(negative_slope=0.1)
+        )
+
+    def forward(self, input):
+        return self.main(input)
+
+class UpSamplingLayer(nn.Module):
+    def __init__(self, channel_in, channel_out, kernel_size=5, stride=1, padding=2):
+        super(UpSamplingLayer, self).__init__()
+        self.main = nn.Sequential(
+            nn.Conv1d(channel_in, channel_out, kernel_size=kernel_size,
+                      stride=stride, padding=padding),
+            nn.BatchNorm1d(channel_out),
+            nn.LeakyReLU(negative_slope=0.1),
+        )
+
+    def forward(self, input):
+        return self.main(input)
+
+class UNet(nn.Module):
+    def __init__(self):
+        super(UNet, self).__init__()
+
+        self.encoder = nn.ModuleList([
+            DownSamplingLayer(1, 24, dilation=1),     # 16384 => 8192
+            DownSamplingLayer(24, 48, dilation=2, padding=14),    # 4096
+            DownSamplingLayer(48, 72, dilation=4, padding=28),    # 2048
+
+            DownSamplingLayer(72, 96),    # 1024
+            DownSamplingLayer(96, 120),   # 512
+            DownSamplingLayer(120, 144),  # 256
+            
+            DownSamplingLayer(144, 168),  # 128
+            DownSamplingLayer(168, 192),  # 64
+            DownSamplingLayer(192, 216),  # 32
+            
+            DownSamplingLayer(216, 240),  # 16
+            DownSamplingLayer(240, 264),  # 8
+            DownSamplingLayer(264, 288),  # 4
+        ])
+
+        self.middle = nn.Sequential(
+            nn.Conv1d(288, 288, 15, stride=1, padding=7),
+            nn.BatchNorm1d(288),
+            nn.LeakyReLU(negative_slope=0.1)
+        )
+
+        self.decoder = nn.ModuleList([
+            UpSamplingLayer(288 + 288, 288),
+            UpSamplingLayer(264 + 288, 264), # 同水平层的降采样后维度为 264
+            UpSamplingLayer(240 + 264, 240),
+
+            UpSamplingLayer(216 + 240, 216),
+            UpSamplingLayer(192 + 216, 192),
+            UpSamplingLayer(168 + 192, 168),
+
+            UpSamplingLayer(144 + 168, 144),
+            UpSamplingLayer(120 + 144, 120),
+            UpSamplingLayer(96 + 120, 96),
+
+            UpSamplingLayer(72 + 96, 72),
+            UpSamplingLayer(48 + 72, 48),
+            UpSamplingLayer(24 + 48, 24),
+        ])
+
+        self.out = nn.Sequential(
+            nn.Conv1d(1 + 24, 1, kernel_size=1, stride=1),
+            nn.Tanh()
+        )
+
+    def forward(self, input):
+        tmp = []
+        o = input
+
+        # Up Sampling
+        for i in range(12):
+            o = self.encoder[i](o)
+            tmp.append(o)
+            # [batch_size, T // 2, channels]
+            o = o[:, :, ::2]
+
+        o = self.middle(o)
+
+        # Down Sampling
+        for i in range(12):
+            # [batch_size, T * 2, channels]
+            o = F.interpolate(o, scale_factor=2, mode="linear", align_corners=True)
+            # Skip Connection
+            o = torch.cat([o, tmp[12 - i - 1]], dim=1)
+            o = self.decoder[i](o)
+        
+        o = torch.cat([o, input], dim=1)
+        o = self.out(o)
+        return o

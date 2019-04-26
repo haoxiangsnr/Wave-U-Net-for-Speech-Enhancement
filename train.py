@@ -29,7 +29,7 @@ def main(config, resume):
         shuffle=config["train_dataset"]["shuffle"]
     )
 
-    valid_dataset = TestDataset(
+    valid_dataset = TrainDataset(
         mixture_dataset=config["valid_dataset"]["mixture"],
         clean_dataset=config["valid_dataset"]["clean"],
         limit=config["valid_dataset"]["limit"],
@@ -39,10 +39,9 @@ def main(config, resume):
         dataset=valid_dataset,
         batch_size=config["valid_dataset"]["batch_size"],
         num_workers=config["valid_dataset"]["num_workers"],
-        shuffle=config["valid_dataset"]["shuffle"]
     )
 
-    model = getattr(model_arch, config["model_arch"]).UNet()
+    model = getattr(model_arch, config["model"]).UNet()
 
     optimizer = torch.optim.Adam(
         params=model.parameters(),

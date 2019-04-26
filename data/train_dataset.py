@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import deepdish as dd
+import numpy as np
 from torch.utils.data import Dataset
 
 from utils.utils import sample_fixed_length_data_aligned
@@ -24,12 +24,12 @@ class TrainDataset(Dataset):
 
         assert mixture_dataset.exists() and clean_dataset.exists(), "训练数据集不存在"
 
-        print(f"Loading mixture dataset {mixture_dataset} ...")
-        self.mixture_dataset = dd.io.load("mixture_dataset")
-        print(f"Loading clean dataset {clean_dataset} ...")
-        self.clean_dataset = dd.io.load("clean_dataset")
-        assert len(self.mixture_dataset) == len(self.clean_dataset), \
-            "mixture dataset 与 clean dataset 长度不同"
+        print(f"Loading mixture dataset {mixture_dataset.as_posix()} ...")
+        self.mixture_dataset:dict = np.load(mixture_dataset.as_posix()).item()
+        print(f"Loading clean dataset {clean_dataset.as_posix()} ...")
+        self.clean_dataset:dict = np.load(clean_dataset.as_posix()).item()
+        assert len(self.mixture_dataset) % len(self.clean_dataset) == 0, \
+            "mixture dataset 的长度不是 clean dataset 的整数倍"
 
         print(f"The len of fully dataset is {len(self.mixture_dataset)}.")
         print(f"The limit is {limit}.")
@@ -52,8 +52,9 @@ class TrainDataset(Dataset):
         sample_length = 16384
 
         name = self.keys[item]
+        num = name.split("_")[0]
         mixture = self.mixture_dataset[name]
-        clean = self.clean_dataset[name]
+        clean = self.clean_dataset[num]
 
         assert mixture.shape == clean.shape
 

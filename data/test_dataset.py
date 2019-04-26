@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import deepdish as dd
+import numpy as np
 from torch.utils.data import Dataset
 
 class TestDataset(Dataset):
@@ -22,12 +22,12 @@ class TestDataset(Dataset):
 
         assert mixture_dataset.exists() and clean_dataset.exists(), "测试数据集不存在"
 
-        print(f"Loading mixture dataset {mixture_dataset} ...")
-        self.mixture_dataset = dd.io.load("mixture_dataset")
-        print(f"Loading clean dataset {clean_dataset} ...")
-        self.clean_dataset = dd.io.load("clean_dataset")
-        assert len(self.mixture_dataset) == len(self.clean_dataset), \
-            "mixture dataset 与 clean dataset 长度不同"
+        print(f"Loading mixture dataset {mixture_dataset.as_posix()} ...")
+        self.mixture_dataset = np.load(mixture_dataset.as_posix()).item()
+        print(f"Loading clean dataset {clean_dataset.as_posix()} ...")
+        self.clean_dataset = np.load(clean_dataset.as_posix()).item()
+        assert len(self.mixture_dataset) % len(self.clean_dataset) == 0, \
+            "mixture dataset 的长度不是 clean dataset 的整数倍"
 
         print(f"The len of fully dataset is {len(self.mixture_dataset)}.")
         print(f"The limit is {limit}.")
@@ -47,11 +47,10 @@ class TestDataset(Dataset):
         return self.length
 
     def __getitem__(self, item):
-        sample_length = 16384
-
         name = self.keys[item]
+        num = name.split("_")[0]
         mixture = self.mixture_dataset[name]
-        clean = self.clean_dataset[name]
+        clean = self.clean_dataset[num]
 
         assert mixture.shape == clean.shape
         return mixture.reshape(1, -1), clean.reshape(1, -1), name

@@ -96,7 +96,7 @@ class UNet(nn.Module):
         # Down Sampling
         for i in range(12):
             # [batch_size, T * 2, channels]
-            o = nn.Upsample(scale_factor=2, mode="linear", align_corners=True)(o)
+            o = F.interpolate(o, scale_factor=2, mode="linear", align_corners=True)
             # Skip Connection
             o = torch.cat([o, tmp[12 - i - 1]], dim=1)
             o = self.decoder[i](o)
