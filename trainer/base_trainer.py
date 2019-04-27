@@ -120,12 +120,17 @@ class BaseTrainer:
 
     @staticmethod
     def _print_networks(nets: list):
-        num_params = 0
-        for net in nets:
+        print("模型参数信息：")
+        params_of_all_networks = 0
+        for i, net in enumerate(nets, start=1):
+            params_of_network = 0
             for param in net.parameters():
-                num_params += param.numel()
+                params_of_network += param.numel()
 
-        print(f"当前网络共有参数：{num_params / 1e6} 百万个.")
+            print(f"\t模型中第{i}个子网络包含参数 {params_of_network / 1e6} 百万个.")
+            params_of_all_networks += params_of_network
+
+        print(f"总计 {params_of_all_networks / 1e6} 百万个.")
 
 
     @staticmethod
@@ -162,10 +167,11 @@ class BaseTrainer:
                 f"使用 GPU 数量为 {n_gpu}，大于系统拥有的 GPU 数量 {torch.cuda.device_count()}"
 
             if use_cudnn:
+                print("实验将使用 Cudnn，实验结果可能无法重复.")
                 torch.backends.cudnn.enabled = True
                 torch.backends.cudnn.benchmark = True
-
-            print(f"实验使用的 GPU 数量为 {n_gpu}.")
+            else:
+                print("实验未使用 Cudnn.")
 
         device = torch.device("cpu" if use_cpu else "cuda:0")
 

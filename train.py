@@ -36,9 +36,7 @@ def main(config, resume):
         offset=config["valid_dataset"]["offset"],
     )
     valid_data_loader = DataLoader(
-        dataset=valid_dataset,
-        batch_size=config["valid_dataset"]["batch_size"],
-        num_workers=config["valid_dataset"]["num_workers"],
+        dataset=valid_dataset
     )
 
     model = getattr(model_arch, config["model"]).UNet()

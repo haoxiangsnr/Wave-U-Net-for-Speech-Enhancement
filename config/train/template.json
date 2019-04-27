@@ -28,7 +28,5 @@
         "clean": "/home/imucs/Center/timit_waveform_192/test/clean.npy",
         "limit": "必填，null 表示无上限",
         "offset": 0,
-        "batch_size": 1,
-        "num_workers": 1
     }
 }
