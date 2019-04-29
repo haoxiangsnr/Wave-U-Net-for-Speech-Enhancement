@@ -35,13 +35,19 @@ class BaseTrainer:
         self.save_period = config["trainer"]["save_period"]
         self.start_epoch = 1  # 非配置项，当 resume == True 时，参数会被重置
         self.best_score = 0.0  # 非配置项
-        self.root_dir = Path(config["save_location"]) / config["name"]
+        self.save_location = Path(config["save_location"])
+        self.root_dir = self.save_location / config["name"]
         self.checkpoints_dir = self.root_dir / "checkpoints"
         self.tensorboardX_logs_dir = self.root_dir / "logs"
-        self._prepare_empty_dir([self.root_dir, self.checkpoints_dir, self.tensorboardX_logs_dir], resume)
+        self._prepare_empty_dir([
+            self.save_location,
+            self.root_dir,
+            self.checkpoints_dir,
+            self.tensorboardX_logs_dir
+        ], resume)
         self.viz = TensorboardXWriter(self.tensorboardX_logs_dir.as_posix())
         self.visualize_metrics_period = config["visualize_metrics_period"]
-        self.viz.writer.add_text("Configuration", json.dumps(config, indent=2, sort_keys=False), global_step=1)
+        self.viz.writer.add_text("Configuration", "```json\n" + json.dumps(config, indent=2, sort_keys=False) + "\n```", global_step=1)
         self.viz.writer.add_text("Description", config["description"], global_step=1)
 
         if resume: self._resume_checkpoint()
@@ -120,17 +126,17 @@ class BaseTrainer:
 
     @staticmethod
     def _print_networks(nets: list):
-        print("模型参数信息：")
+        print(f"当前模型包含 {len(nets)} 个子网络，参数信息如下：")
         params_of_all_networks = 0
         for i, net in enumerate(nets, start=1):
             params_of_network = 0
             for param in net.parameters():
                 params_of_network += param.numel()
 
-            print(f"\t模型中第{i}个子网络包含参数 {params_of_network / 1e6} 百万个.")
+            print(f"\t子网络 {i}： {params_of_network / 1e6} 百万个.")
             params_of_all_networks += params_of_network
 
-        print(f"总计 {params_of_all_networks / 1e6} 百万个.")
+        print(f"参数数量总计为 {params_of_all_networks / 1e6} 百万个.")
 
 
     @staticmethod

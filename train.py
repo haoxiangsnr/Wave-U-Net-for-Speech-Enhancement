@@ -9,7 +9,6 @@ from torch.utils.data import DataLoader
 import models as model_arch
 import models.loss as model_loss
 from data.train_dataset import TrainDataset
-from data.test_dataset import TestDataset
 from trainer.trainer import Trainer
 
 torch.manual_seed(0)
@@ -33,13 +32,14 @@ def main(config, resume):
         mixture_dataset=config["valid_dataset"]["mixture"],
         clean_dataset=config["valid_dataset"]["clean"],
         limit=config["valid_dataset"]["limit"],
-        offset=config["valid_dataset"]["offset"],
+        offset=config["valid_dataset"]["offset"]
     )
     valid_data_loader = DataLoader(
         dataset=valid_dataset
     )
 
-    model = getattr(model_arch, config["model"]).UNet()
+    model_cfg = config["model"]
+    model = getattr(model_arch, model_cfg["type"]).UNet(**model_cfg["args"])
 
     optimizer = torch.optim.Adam(
         params=model.parameters(),
