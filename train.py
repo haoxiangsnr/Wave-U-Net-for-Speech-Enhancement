@@ -1,4 +1,5 @@
 import argparse
+import importlib
 import json
 import os
 
@@ -6,7 +7,6 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-import models as model_arch
 import models.loss as model_loss
 from data.train_dataset import TrainDataset
 from trainer.trainer import Trainer
@@ -39,7 +39,8 @@ def main(config, resume):
     )
 
     model_cfg = config["model"]
-    model = getattr(model_arch, model_cfg["type"]).UNet(**model_cfg["args"])
+    model_path = f"models.{model_cfg['type']}"
+    model = importlib.import_module(model_path).UNet(**model_cfg["args"])
 
     optimizer = torch.optim.Adam(
         params=model.parameters(),

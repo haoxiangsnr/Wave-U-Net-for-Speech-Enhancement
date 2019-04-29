@@ -1,3 +1,4 @@
+import math
 import os
 import time
 
@@ -134,3 +135,11 @@ def sample_dataset_aligned(dataset_A, dataset_B, n_frames=128):
     sampling_dataset_B = np.array(sampling_dataset_B)
 
     return sampling_dataset_A, sampling_dataset_B
+
+def calculate_l_out(l_in, kernel_size, stride, dilation=1, padding=0):
+    # https://pytorch.org/docs/stable/nn.html#conv1d
+    return math.floor(((l_in + 2 * padding - dilation * (kernel_size - 1) - 1) / stride) + 1)
+
+def calculate_same_padding(l_in, kernel_size, stride, dilation=1):
+    # https://pytorch.org/docs/stable/nn.html#conv1d
+    return math.ceil(((l_in - 1) * stride + 1 + dilation * (kernel_size - 1) - l_in) / 2)

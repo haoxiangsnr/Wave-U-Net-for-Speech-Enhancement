@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from utils.utils import calculate_same_padding
+
 
 class DownSamplingLayer(nn.Module):
     def __init__(self, channel_in, channel_out, dilation=1, kernel_size=15, stride=1, padding=7):
@@ -30,9 +32,10 @@ class UpSamplingLayer(nn.Module):
         return self.main(ipt)
 
 class UNet(nn.Module):
-    def __init__(self, n_layers=12, channels_interval=24):
+    def __init__(self, n_layers=12, channels_interval=24, dilation_layer=6):
         super(UNet, self).__init__()
 
+        assert dilation_layer <= n_layers, f"总层数为 {n_layers}，需要膨胀的层为 {dilation_layer}，膨胀失败..."
         self.n_layers = n_layers
         self.channels_interval = channels_interval
         encoder_in_channels_list = [1] + [i * self.channels_interval for i in range(1, self.n_layers)]
@@ -45,7 +48,9 @@ class UNet(nn.Module):
             self.encoder.append(
                 DownSamplingLayer(
                     channel_in=encoder_in_channels_list[i],
-                    channel_out=encoder_out_channels_list[i]
+                    channel_out=encoder_out_channels_list[i],
+                    dilation=2 if i == (dilation_layer - 1) else 1,
+                    padding=14 if i == (dilation_layer - 1) else 7,
                 )
             )
 
