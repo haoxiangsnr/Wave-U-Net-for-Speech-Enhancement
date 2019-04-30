@@ -3,14 +3,14 @@ from pathlib import Path
 import numpy as np
 from torch.utils.data import Dataset
 
-from utils.utils import sample_fixed_length_data_aligned
+from utils.utils import sample_fixed_length_data_aligned, apply_mean_std
 
 class TrainDataset(Dataset):
     """
     定义训练集
     """
 
-    def __init__(self, mixture_dataset, clean_dataset, limit=None, offset=0):
+    def __init__(self, mixture_dataset, clean_dataset, limit=None, offset=0, apply_normalization=False):
         """
         构建训练数据集
         Args:
@@ -18,7 +18,9 @@ class TrainDataset(Dataset):
             clean_dataset (str): 纯净语音数据集
             limit (int): 数据集的数量上限
             offset (int): 数据集的起始位置的偏移值
+            apply_normalization (bool): 是否规范化（减均值，除标准差）
         """
+        self.apply_normalization = apply_normalization
         mixture_dataset = Path(mixture_dataset)
         clean_dataset = Path(clean_dataset)
 
@@ -60,5 +62,8 @@ class TrainDataset(Dataset):
 
         # 定长采样
         mixture, clean = sample_fixed_length_data_aligned(mixture, clean, sample_length)
+        if self.apply_normalization:
+            mixture = apply_mean_std(mixture)
+            clean = apply_mean_std(clean)
 
         return mixture.reshape(1, -1), clean.reshape(1, -1), name

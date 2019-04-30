@@ -1,5 +1,4 @@
 import argparse
-import importlib
 import json
 import os
 
@@ -20,6 +19,7 @@ def main(config, resume):
         clean_dataset=config["train_dataset"]["clean"],
         limit=config["train_dataset"]["limit"],
         offset=config["train_dataset"]["offset"],
+        apply_normalization=config["train_dataset"]["apply_normalization"]
     )
     train_data_loader = DataLoader(
         dataset=train_dataset,
@@ -32,7 +32,8 @@ def main(config, resume):
         mixture_dataset=config["valid_dataset"]["mixture"],
         clean_dataset=config["valid_dataset"]["clean"],
         limit=config["valid_dataset"]["limit"],
-        offset=config["valid_dataset"]["offset"]
+        offset=config["valid_dataset"]["offset"],
+        apply_normalization=config["valid_dataset"]["apply_normalization"]
     )
 
     valid_data_loader = DataLoader(

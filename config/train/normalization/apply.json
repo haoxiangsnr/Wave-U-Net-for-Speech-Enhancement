@@ -1,7 +1,10 @@
 {
-    "name": "layers_12",
+    "name": "apply",
     "n_gpu": 1,
     "use_cudnn": true,
+    "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet/normalization",
+    "description": "在输入进入网络前使用 normalization",
+    "visualize_metrics_period": 5,
     "model": {
         "module": "models.unet_basic",
         "main": "UNet",
@@ -15,9 +18,6 @@
         "main": "mse_loss",
         "args": {}
     },
-    "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet/layers",
-    "description": "层数设置为 12",
-    "visualize_metrics_period": 5,
     "optimizer": {
         "lr": 0.001
     },
@@ -39,6 +39,7 @@
         "mixture": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/noise_7_clean_900/test/mixture.npy",
         "clean": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/noise_7_clean_900/test/clean.npy",
         "limit": 100,
-        "offset": 0
+        "offset": 0,
+        "apply_normalization": true
     }
 }

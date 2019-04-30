@@ -184,3 +184,6 @@ def initialize_config(module_cfg):
 def write_json(content, path):
     with open(path, "w") as handle:
         json.dump(content, handle, indent=2, sort_keys=False)
+
+def apply_mean_std(y):
+    return (y - np.mean(y)) / np.std(y)

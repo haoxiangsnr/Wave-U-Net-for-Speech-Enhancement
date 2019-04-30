@@ -1,13 +1,10 @@
 import torch
 
-def mse_loss(output, target):
-    loss =  torch.nn.MSELoss()
-    return loss(output, target)
+def mse_loss():
+    return torch.nn.MSELoss()
 
-def l1_loss(output, target):
-    loss = torch.nn.L1Loss()
-    return loss(output, target)
+def l1_loss():
+    return torch.nn.L1Loss()
 
-def bce_loss(output, target):
-    loss = torch.nn.BCEWithLogitsLoss()
-    return loss(output, target) # output 0~1
+def bce_loss():
+    return torch.nn.BCEWithLogitsLoss() # output 0~1
