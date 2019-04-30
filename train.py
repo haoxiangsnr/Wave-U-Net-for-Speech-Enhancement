@@ -7,9 +7,9 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-import models.loss as model_loss
 from data.train_dataset import TrainDataset
 from trainer.trainer import Trainer
+from utils.utils import initialize_config
 
 torch.manual_seed(0)
 np.random.seed(0)
@@ -34,13 +34,12 @@ def main(config, resume):
         limit=config["valid_dataset"]["limit"],
         offset=config["valid_dataset"]["offset"]
     )
+
     valid_data_loader = DataLoader(
         dataset=valid_dataset
     )
 
-    model_cfg = config["model"]
-    model_path = f"models.{model_cfg['type']}"
-    model = importlib.import_module(model_path).UNet(**model_cfg["args"])
+    model = initialize_config(config["model"])
 
     optimizer = torch.optim.Adam(
         params=model.parameters(),
@@ -48,7 +47,7 @@ def main(config, resume):
         betas=(0.9, 0.999)
     )
 
-    loss_function = getattr(model_loss, config["loss_function"])
+    loss_function = initialize_config(config["loss_function"])
 
     trainer = Trainer(
         config=config,

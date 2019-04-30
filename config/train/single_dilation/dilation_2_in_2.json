@@ -1,0 +1,46 @@
+{
+    "name": "dilation_2_in_2_new_config",
+    "n_gpu": 1,
+    "use_cudnn": true,
+    "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet/single_dilation",
+    "description": "层数设置为 12，膨胀系数为 2，在降采样的第 2 层膨胀",
+    "visualize_metrics_period": 5,
+    "model": {
+        "module": "unet_single_dilation",
+        "main": "UNet",
+        "args": {
+            "n_layers": 12,
+            "channels_interval": 24,
+            "dilation_layer": 2
+        }
+    },
+    "loss_function": {
+        "module": "models.loss",
+        "main": "mse_loss",
+        "args": {
+
+        }
+    },
+    "optimizer": {
+        "lr": 0.001
+    },
+    "trainer": {
+        "epochs": 1000,
+        "save_period": 3
+    },
+    "train_dataset": {
+        "mixture": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/noise_7_clean_900/train/mixture.npy",
+        "clean": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/noise_7_clean_900/train/clean.npy",
+        "limit": null,
+        "offset": 0,
+        "shuffle": true,
+        "num_workers": 40,
+        "batch_size": 150
+    },
+    "valid_dataset": {
+        "mixture": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/noise_7_clean_900/test/mixture.npy",
+        "clean": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/noise_7_clean_900/test/clean.npy",
+        "limit": 100,
+        "offset": 0
+    }
+}

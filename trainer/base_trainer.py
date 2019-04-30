@@ -4,6 +4,7 @@ from pathlib import Path
 
 import torch
 
+from utils.utils import write_json
 from utils.visualization import TensorboardXWriter
 
 
@@ -54,9 +55,9 @@ class BaseTrainer:
 
         print("模型，优化器，参数，目录初始化完毕，本实验中使用的配置信息如下：")
         print(json.dumps(config, indent=2, sort_keys=False))
+
         config_save_path = os.path.join(self.root_dir, "config.json")
-        with open(config_save_path, "w") as handle:
-            json.dump(config, handle, indent=2, sort_keys=False)
+        write_json(config, config_save_path)
         self._print_networks([self.model])
 
 

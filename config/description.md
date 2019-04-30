@@ -16,25 +16,29 @@
 ## 训练参数汇总
 
 ```yaml
-name: [str] 实验名
-n_gpu: [int] GPU数量，需要配合 -D(--device) 参数
-use_cudnn: [bool] 是否使用 Cudnn 加速训练，使用 Cudnn 可能会导致实验无法重复
-loss_function: [str] 损失函数，即 models/loss.py 文件中的函数名
-save_location: [str] 实验训练过程中产生的数据的存放位置，由于模型断点非常占用空间，可以将 save_location 指定在其他磁盘上，不一定要在当前目录下。
-description: [str] 实验描述信息
-visualize_metrics_period: [str] 可视化评价指标结果的间隔（包含波形文件，语音的可视化）
-# 定义模型结构
+name: "UNet_first_exp"          # [str] 实验名
+n_gpu: 1                        # [int] GPU数量，需要配合 train.py 脚本的 -D (--device) 参数
+use_cudnn: true                 # [bool] 是否使用 Cudnn 加速训练，使用 Cudnn 可能会导致实验无法重复
+save_location:                  # [str] 实验训练过程中产生的数据的存放位置，由于模型断点非常占用空间，可以将 save_location 指定在其他磁盘上。
+                                # 不一定要在当前目录下。
+description:                    # [str] 实验描述信息
+visualize_metrics_period:       # [str] 可视化评价指标结果的间隔（包含波形文件，语音的可视化）
+loss_function:            
+  module: "models.loss"         # [str] 存放损失函数的模块文件
+  main: "mse_loss"              # [str] 模块中可能存有多个函数或者类，main 指定需要加载的函数
+  args: {}                      # 传入给 mse_loss 的位置参数
+  
 model:  
-  type: [str] 模型的类型，即 models 目录下的文件名，不包含拓展名
-  # 定义模型相应的参数
-  args: 
+  module: "models.unet_basic"   # [str] 存放模型类的模块文件
+  main: "UNet"                  # [str] 模块中需要加载的模型类
+  args:                         # [dict] 传入给 UNet 类的位置参数
     n_layers: 11
-    channels_interval: 24
+    channels_interval: 24       
 optimizer:
   lr: 0.001
 trainer:
   epochs: 1000
-  save_period: [str] 存储模型断点的周期
+  save_period:                  # [str] 存储模型断点的周期
 train_dataset:
   mixture: "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/noise_7_clean_900/train/mixture.npy"
   clean: "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/noise_7_clean_900/train/clean.npy"

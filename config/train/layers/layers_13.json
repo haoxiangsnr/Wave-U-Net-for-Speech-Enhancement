@@ -1,0 +1,38 @@
+{
+    "name": "layers_13",
+    "n_gpu": 1,
+    "use_cudnn": true,
+    "model": {
+        "type": "unet_basic",
+        "args": {
+            "n_layers": 13,
+            "channels_interval": 24
+        }
+    },
+    "loss_function": "mse_loss",
+    "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet/layers",
+    "description": "层数设置为 13",
+    "visualize_metrics_period": 5,
+    "optimizer": {
+        "lr": 0.001
+    },
+    "trainer": {
+        "epochs": 1000,
+        "save_period": 3
+    },
+    "train_dataset": {
+        "mixture": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/noise_7_clean_900/train/mixture.npy",
+        "clean": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/noise_7_clean_900/train/clean.npy",
+        "limit": null,
+        "offset": 0,
+        "shuffle": true,
+        "num_workers": 40,
+        "batch_size": 150
+    },
+    "valid_dataset": {
+        "mixture": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/noise_7_clean_900/test/mixture.npy",
+        "clean": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/noise_7_clean_900/test/clean.npy",
+        "limit": 100,
+        "offset": 0
+    }
+}

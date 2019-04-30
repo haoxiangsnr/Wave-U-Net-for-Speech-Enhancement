@@ -1,3 +1,5 @@
+import importlib
+import json
 import math
 import os
 import time
@@ -143,3 +145,42 @@ def calculate_l_out(l_in, kernel_size, stride, dilation=1, padding=0):
 def calculate_same_padding(l_in, kernel_size, stride, dilation=1):
     # https://pytorch.org/docs/stable/nn.html#conv1d
     return math.ceil(((l_in - 1) * stride + 1 + dilation * (kernel_size - 1) - l_in) / 2)
+
+def initialize_config_in_single_module(module_cfg, module):
+    """
+    根据配置项，获取模块内部的函数，并将参数传入函数
+    Args:
+        module_cfg (dict): 针对 module 模块的配置信息
+        module: 调用其内部的属性（函数）
+
+    Returns:
+        调用模块内对应的函数，返回函数执行后的返回值
+    """
+    # 调用模块内对应的函数，返回函数执行后的返回值
+    return getattr(module, module_cfg["type"])(**module_cfg["args"])
+
+def initialize_config(module_cfg):
+    """
+    根据配置项，动态加载对应的模块，并将参数传入模块内部的指定函数
+    eg，配置文件如下：
+        module_cfg = {
+            "module": "models.unet",
+            "main": "UNet",
+            "args": {...}
+        }
+    1. 加载 type 参数对应的模块
+    2. 调用（实例化）模块内部对应 main 参数的函数（类）
+    3. 在调用（实例化）时将 args 参数输入函数（类）
+
+    Args:
+        module_cfg: 配置信息，见 json 配置文件
+
+    Returns:
+
+    """
+    module = importlib.import_module(module_cfg["module"])
+    return getattr(module, module_cfg["main"])(**module_cfg["args"])
+
+def write_json(content, path):
+    with open(path, "w") as handle:
+        json.dump(content, handle, indent=2, sort_keys=False)
