@@ -146,7 +146,7 @@ class BaseTrainer:
             if resume:
                 assert dir_path.exists()
             else:
-                dir_path.mkdir(parents=False, exist_ok=True)
+                dir_path.mkdir(parents=True, exist_ok=True)
 
 
     @staticmethod
