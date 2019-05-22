@@ -156,7 +156,7 @@ class Trainer(BaseTrainer):
 
             self._train_epoch(epoch)
 
-            if self.visualize_metrics_period != 0 and epoch % self.visualize_metrics_period == 0:
+            if self.validation_period!= 0 and epoch % self.validation_period == 0:
                 # 测试一轮，并绘制波形文件
                 print(f"[{timer.duration()} seconds] 训练结束，开始计算评价指标...")
                 score = self._test_epoch(epoch)

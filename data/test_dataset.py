@@ -1,5 +1,7 @@
+import os
 from pathlib import Path
 
+import joblib
 import numpy as np
 from torch.utils.data import Dataset
 
@@ -17,37 +19,41 @@ class TestDataset(Dataset):
             limit (int): 数据集的数量上限
             offset (int): 数据集的起始位置的偏移值
         """
-        mixture_dataset = Path(mixture_dataset)
-        clean_dataset = Path(clean_dataset)
+        assert os.path.exists(mixture_dataset) and os.path.exists(clean_dataset), "测试数据集不存在"
 
-        assert mixture_dataset.exists() and clean_dataset.exists(), "测试数据集不存在"
-
-        print(f"Loading mixture dataset {mixture_dataset.as_posix()} ...")
-        self.mixture_dataset = np.load(mixture_dataset.as_posix()).item()
-        print(f"Loading clean dataset {clean_dataset.as_posix()} ...")
-        self.clean_dataset = np.load(clean_dataset.as_posix()).item()
-        assert len(self.mixture_dataset) % len(self.clean_dataset) == 0, \
+        print(f"Loading mixture dataset {mixture_dataset} ...")
+        mixture_dataset: dict  = joblib.load(mixture_dataset)
+        print(f"Loading clean dataset {clean_dataset} ...")
+        clean_dataset: dict = joblib.load(clean_dataset)
+        assert len(mixture_dataset) % len(clean_dataset) == 0, \
             "mixture dataset 的长度不是 clean dataset 的整数倍"
 
-        print(f"The len of fully dataset is {len(self.mixture_dataset)}.")
+        mixture_dataset_keys = list(mixture_dataset.keys())
+        mixture_dataset_keys = sorted(mixture_dataset_keys)
+
+        # Limit
+        if limit and limit <= len(mixture_dataset_keys):
+            self.length = limit
+        else:
+            self.length = len(mixture_dataset_keys)
+
+        # Offset
+        if offset:
+            mixture_dataset_keys = mixture_dataset_keys[offset: offset + self.length]
+            self.length = len(mixture_dataset_keys)
+
+        self.mixture_dataset = mixture_dataset
+        self.clean_dataset = clean_dataset
+        self.mixture_dataset_keys = mixture_dataset_keys
+
         print(f"The limit is {limit}.")
         print(f"The offset is {offset}.")
-
-        if limit is None:
-            limit = len(self.mixture_dataset)
-
-        self.keys = list(self.mixture_dataset.keys())
-        self.keys.sort()
-        self.keys = self.keys[offset: offset + limit]
-
-        self.length = len(self.keys)
-        print(f"Finish, len(finial dataset) == {self.length}.")
-
+        print(f"The len of fully dataset is {self.length}.")
     def __len__(self):
         return self.length
 
     def __getitem__(self, item):
-        name = self.keys[item]
+        name = self.mixture_dataset_keys[item]
         num = name.split("_")[0]
         mixture = self.mixture_dataset[name]
         clean = self.clean_dataset[num]

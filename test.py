@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import models as model_arch
-from data.test_dataset import TestNpyDataset
+from data.test_dataset import TestDataset
 
 
 def pad_last(data, size):
@@ -25,16 +25,17 @@ def load_checkpoint(checkpoints_dir, name, dev):
 
 def main(config, epoch):
     test_data_args = config["test_data"]
-    test_dataset = TestNpyDataset(
-        dataset=config["dataset"],
-        limit=test_data_args["limit"],
-        offset=test_data_args["offset"]
-    )
-    test_data_loader = DataLoader(
-        dataset=test_dataset,
-        batch_size=1,
-        num_workers=1
-    )
+
+    # test_dataset = TestDataset(
+    #     =config["dataset"],
+    #     limit=test_data_args["limit"],
+    #     offset=test_data_args["offset"]
+    # )
+    # test_data_loader = DataLoader(
+    #     dataset=test_dataset,
+    #     batch_size=1,
+    #     num_workers=1
+    # )
 
     dev = torch.device("cpu")
     model = getattr(model_arch, config["model_arch"]).UNet()

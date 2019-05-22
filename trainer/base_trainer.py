@@ -34,6 +34,7 @@ class BaseTrainer:
         self.loss_function = loss_function
         self.epochs = config["trainer"]["epochs"]
         self.save_period = config["trainer"]["save_period"]
+        self.validation_period = config["trainer"]["validation_period"]
         self.start_epoch = 1  # 非配置项，当 resume == True 时，参数会被重置
         self.best_score = 0.0  # 非配置项
         self.save_location = Path(config["save_location"])
@@ -47,7 +48,6 @@ class BaseTrainer:
             self.tensorboardX_logs_dir
         ], resume)
         self.viz = TensorboardXWriter(self.tensorboardX_logs_dir.as_posix())
-        self.visualize_metrics_period = config["visualize_metrics_period"]
         self.viz.writer.add_text("Configuration", "```json\n" + json.dumps(config, indent=2, sort_keys=False) + "\n```", global_step=1)
         self.viz.writer.add_text("Description", config["description"], global_step=1)
 
@@ -55,7 +55,6 @@ class BaseTrainer:
 
         print("模型，优化器，参数，目录初始化完毕，本实验中使用的配置信息如下：")
         print(json.dumps(config, indent=2, sort_keys=False))
-
         config_save_path = os.path.join(self.root_dir, "config.json")
         write_json(config, config_save_path)
         self._print_networks([self.model])

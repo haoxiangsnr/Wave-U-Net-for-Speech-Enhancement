@@ -1,6 +1,6 @@
-from pathlib import Path
+import os
 
-import numpy as np
+import joblib
 from torch.utils.data import Dataset
 
 from utils.utils import sample_fixed_length_data_aligned, apply_mean_std
@@ -20,32 +20,37 @@ class TrainDataset(Dataset):
             offset (int): 数据集的起始位置的偏移值
             apply_normalization (bool): 是否规范化（减均值，除标准差）
         """
-        self.apply_normalization = apply_normalization
-        mixture_dataset = Path(mixture_dataset)
-        clean_dataset = Path(clean_dataset)
+        assert os.path.exists(mixture_dataset) and os.path.exists(clean_dataset), "训练数据集不存在"
 
-        assert mixture_dataset.exists() and clean_dataset.exists(), "训练数据集不存在"
-
-        print(f"Loading mixture dataset {mixture_dataset.as_posix()} ...")
-        self.mixture_dataset:dict = np.load(mixture_dataset.as_posix()).item()
-        print(f"Loading clean dataset {clean_dataset.as_posix()} ...")
-        self.clean_dataset:dict = np.load(clean_dataset.as_posix()).item()
-        assert len(self.mixture_dataset) % len(self.clean_dataset) == 0, \
+        print(f"Loading mixture dataset {mixture_dataset} ...")
+        mixture_dataset: dict  = joblib.load(mixture_dataset)
+        print(f"Loading clean dataset {clean_dataset} ...")
+        clean_dataset: dict = joblib.load(clean_dataset)
+        assert len(mixture_dataset) % len(clean_dataset) == 0, \
             "mixture dataset 的长度不是 clean dataset 的整数倍"
 
-        print(f"The len of fully dataset is {len(self.mixture_dataset)}.")
+        mixture_dataset_keys = list(mixture_dataset.keys())
+        mixture_dataset_keys = sorted(mixture_dataset_keys)
+
+        # Limit
+        if limit and limit <= len(mixture_dataset_keys):
+            self.length = limit
+        else:
+            self.length = len(mixture_dataset_keys)
+
+        # Offset
+        if offset:
+            mixture_dataset_keys = mixture_dataset_keys[offset: offset + self.length]
+            self.length = len(mixture_dataset_keys)
+
+        self.mixture_dataset = mixture_dataset
+        self.clean_dataset = clean_dataset
+        self.mixture_dataset_keys = mixture_dataset_keys
+        self.apply_normalization = apply_normalization
+
         print(f"The limit is {limit}.")
         print(f"The offset is {offset}.")
-
-        if limit is None:
-            limit = len(self.mixture_dataset)
-
-        self.keys = list(self.mixture_dataset.keys())
-        self.keys.sort()
-        self.keys = self.keys[offset: offset + limit]
-
-        self.length = len(self.keys)
-        print(f"Finish, len(finial dataset) == {self.length}.")
+        print(f"The len of fully dataset is {self.length}.")
 
     def __len__(self):
         return self.length
@@ -53,7 +58,7 @@ class TrainDataset(Dataset):
     def __getitem__(self, item):
         sample_length = 16384
 
-        name = self.keys[item]
+        name = self.mixture_dataset_keys[item]
         num = name.split("_")[0]
         mixture = self.mixture_dataset[name]
         clean = self.clean_dataset[num]

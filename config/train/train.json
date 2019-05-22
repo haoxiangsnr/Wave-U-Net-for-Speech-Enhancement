@@ -1,0 +1,55 @@
+{
+    "name": "unet_basic",
+    "seed": 0,
+    "description": "实验描述",
+    "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet",
+    "n_gpu": 1,
+    "use_cudnn": true,
+    "model": {
+        "module": "models.unet_basic",
+        "main": "UNet",
+        "args": {
+            "n_layers": 12,
+            "channels_interval": 24
+        }
+    },
+    "loss_function": {
+        "module": "models.loss",
+        "main": "mse_loss",
+        "args": {}
+    },
+    "optimizer": {
+        "lr": 0.002
+    },
+    "trainer": {
+        "epochs": 1000,
+        "save_period": 10,
+        "validation_period": 10
+    },
+    "train_dataset": {
+        "module": "data.train_dataset",
+        "main": "TrainDataset",
+        "args": {
+            "mixture_dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/UNet-GAN/basic/train/mixture.pkl",
+            "clean_dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/UNet-GAN/basic/train/clean.pkl",
+            "limit": null,
+            "offset": 0,
+            "apply_normalization": true
+        }
+    },
+    "validation_dataset": {
+        "module": "data.train_dataset",
+        "main": "TrainDataset",
+        "args": {
+            "mixture_dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/UNet-GAN/basic/test/mixture.pkl",
+            "clean_dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/UNet-GAN/basic/test/clean.pkl",
+            "limit": 100,
+            "offset": 0
+        }
+    },
+    "train_dataloader": {
+        "shuffle": true,
+        "num_workers": 40,
+        "batch_size": 150
+    }
+}

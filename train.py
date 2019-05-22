@@ -10,34 +10,20 @@ from data.train_dataset import TrainDataset
 from trainer.trainer import Trainer
 from utils.utils import initialize_config
 
-torch.manual_seed(0)
-np.random.seed(0)
-
 def main(config, resume):
-    train_dataset = TrainDataset(
-        mixture_dataset=config["train_dataset"]["mixture"],
-        clean_dataset=config["train_dataset"]["clean"],
-        limit=config["train_dataset"]["limit"],
-        offset=config["train_dataset"]["offset"],
-        apply_normalization=config["train_dataset"]["apply_normalization"]
-    )
+    torch.manual_seed(0)
+    np.random.seed(0)
+
+    train_dataset = initialize_config(config["train_dataset"])
+    validation_dataset = initialize_config(config["validation_dataset"])
     train_data_loader = DataLoader(
         dataset=train_dataset,
-        batch_size=config["train_dataset"]["batch_size"],
-        num_workers=config["train_dataset"]["num_workers"],
-        shuffle=config["train_dataset"]["shuffle"]
+        batch_size=config["train_dataloader"]["batch_size"],
+        num_workers=config["train_dataloader"]["num_workers"],
+        shuffle=config["train_dataloader"]["shuffle"]
     )
-
-    valid_dataset = TrainDataset(
-        mixture_dataset=config["valid_dataset"]["mixture"],
-        clean_dataset=config["valid_dataset"]["clean"],
-        limit=config["valid_dataset"]["limit"],
-        offset=config["valid_dataset"]["offset"],
-        apply_normalization=config["valid_dataset"]["apply_normalization"]
-    )
-
     valid_data_loader = DataLoader(
-        dataset=valid_dataset
+        dataset=validation_dataset
     )
 
     model = initialize_config(config["model"])
