@@ -5,9 +5,9 @@
   "n_gpu": 4,
   "use_cudnn": true,
   "trainer": {
-    "epochs": 1000,
+    "epochs": 1200,
     "save_checkpoint_interval": 10,
-    "validation_interval": 1,
+    "validation_interval": 10,
     "visualize_audio_limit": 30,
     "visualize_waveform_limit": 30,
     "find_max": true
@@ -43,7 +43,7 @@
       "dataset": "/home/imucs/Datasets/2019-09-03-timit_train-900_test-50/test.txt",
       "limit": 400,
       "offset": 0,
-      "sample_length": 16384
+      "sample_length": null
     }
   },
   "train_dataloader": {

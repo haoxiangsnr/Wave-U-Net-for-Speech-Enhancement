@@ -51,6 +51,7 @@ class WaveformDataset(Dataset):
         clean, _ = librosa.load(clean_path, sr=None)
 
         # 定长采样
-        mixture, clean = sample_fixed_length_data_aligned(mixture, clean, self.sample_length)
+        if self.sample_length:
+            mixture, clean = sample_fixed_length_data_aligned(mixture, clean, self.sample_length)
 
         return mixture.reshape(1, -1), clean.reshape(1, -1), name

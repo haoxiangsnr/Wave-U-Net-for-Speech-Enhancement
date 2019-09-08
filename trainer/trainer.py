@@ -44,6 +44,7 @@ class Trainer(BaseTrainer):
 
     @torch.no_grad()
     def _validation_epoch(self, epoch):
+        sample_length = self.train_data_loader.dataset.sample_length
         stoi_c_n = []
         stoi_c_d = []
         pesq_c_n = []
@@ -52,14 +53,31 @@ class Trainer(BaseTrainer):
         for i, (mixture, clean, name) in enumerate(self.validation_data_loader):
             name = name[0]
 
+            # [batch_size, 1, T]
             mixture = mixture.to(self.device)
             clean = clean.to(self.device)
-            enhanced = self.model(mixture)
+
+            # Input is fixed length
+            mixture_chunks = torch.split(mixture, sample_length, dim=2)
+            if mixture_chunks[-1].shape[-1] != sample_length:
+                mixture_chunks = mixture_chunks[:-1]
+
+            enhanced_chunks = []
+            for chunk in mixture_chunks:
+                enhanced_chunks.append(self.model(chunk).detach().cpu())
+
+            enhanced = torch.cat(enhanced_chunks, dim=2)
 
             # Back to numpy array
             mixture = mixture.cpu().numpy().reshape(-1)
-            enhanced = enhanced.cpu().numpy().reshape(-1)
+            enhanced = enhanced.numpy().reshape(-1)
             clean = clean.cpu().numpy().reshape(-1)
+
+            min_len = min(len(mixture), len(clean), len(enhanced))
+
+            mixture = mixture[:min_len]
+            clean = clean[:min_len]
+            enhanced = enhanced[:min_len]
 
             if i <= self.visualize_audio_limit:
                 # Audio
