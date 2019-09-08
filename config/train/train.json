@@ -1,55 +1,58 @@
 {
-    "name": "unet_basic",
-    "seed": 0,
-    "description": "实验描述",
-    "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/UNet",
-    "n_gpu": 1,
-    "use_cudnn": true,
-    "model": {
-        "module": "models.unet_basic",
-        "main": "UNet",
-        "args": {
-            "n_layers": 12,
-            "channels_interval": 24
-        }
-    },
-    "loss_function": {
-        "module": "models.loss",
-        "main": "mse_loss",
-        "args": {}
-    },
-    "optimizer": {
-        "lr": 0.002
-    },
-    "trainer": {
-        "epochs": 1000,
-        "save_period": 10,
-        "validation_period": 10
-    },
-    "train_dataset": {
-        "module": "data.train_dataset",
-        "main": "TrainDataset",
-        "args": {
-            "mixture_dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/UNet-GAN/basic/train/mixture.pkl",
-            "clean_dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/UNet-GAN/basic/train/clean.pkl",
-            "limit": null,
-            "offset": 0,
-            "apply_normalization": true
-        }
-    },
-    "validation_dataset": {
-        "module": "data.train_dataset",
-        "main": "TrainDataset",
-        "args": {
-            "mixture_dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/UNet-GAN/basic/test/mixture.pkl",
-            "clean_dataset": "/media/imucs/DataDisk/haoxiang/Release/speech_enhancement/UNet-GAN/basic/test/clean.pkl",
-            "limit": 100,
-            "offset": 0
-        }
-    },
-    "train_dataloader": {
-        "shuffle": true,
-        "num_workers": 40,
-        "batch_size": 150
+  "seed": 0,
+  "description": "attempt",
+  "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/Wave-U-Net-for-Speech-Enhancement",
+  "n_gpu": 4,
+  "use_cudnn": true,
+  "trainer": {
+    "epochs": 1000,
+    "save_checkpoint_interval": 10,
+    "validation_interval": 1,
+    "visualize_audio_limit": 30,
+    "visualize_waveform_limit": 30,
+    "find_max": true
+  },
+  "model": {
+    "module": "model.unet_basic",
+    "main": "UNet",
+    "args": {}
+  },
+  "loss_function": {
+    "module": "model.loss",
+    "main": "mse_loss",
+    "args": {}
+  },
+  "optimizer": {
+    "lr": 0.0002,
+    "beta1": 0.9
+  },
+  "train_dataset": {
+    "module": "dataset.waveform_dataset",
+    "main": "WaveformDataset",
+    "args": {
+      "dataset": "/home/imucs/Datasets/2019-09-03-timit_train-900_test-50/train.txt",
+      "limit": null,
+      "offset": 0,
+      "sample_length": 16384
     }
+  },
+  "validation_dataset": {
+    "module": "dataset.waveform_dataset",
+    "main": "WaveformDataset",
+    "args": {
+      "dataset": "/home/imucs/Datasets/2019-09-03-timit_train-900_test-50/test.txt",
+      "limit": 400,
+      "offset": 0,
+      "sample_length": 16384
+    }
+  },
+  "train_dataloader": {
+    "shuffle": true,
+    "num_workers": 40,
+    "batch_size": 800
+  },
+  "validation_dataloader": {
+    "num_workers": 0,
+    "batch_size": 1
+  }
 }

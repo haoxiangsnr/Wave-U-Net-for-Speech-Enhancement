@@ -1,192 +1,229 @@
 import json
-import os
 from pathlib import Path
 
 import torch
 
-from utils.utils import write_json
-from utils.visualization import TensorboardXWriter
+from utils.utils import prepare_empty_dir, ExecutionTime
+from utils.visualization import TensorboardWriter
 
 
 class BaseTrainer:
-    def __init__(self, config, resume: bool, model, loss_function, optim):
-        """
-        构建模型训练器的基类，包含以下功能：
-            - 初始化 CUDA 与并行
-            - 初始化 模型与优化器
-            - 导入参数
-            - 存储模型断点，加载模型断点
-        Args:
-            config: 配置文件
-            resume: 本次实验是否接最近一次的断点继续运行
-            model: 模型
-            optim: 优化器
-        """
-
+    def __init__(self,
+                 config,
+                 resume: bool,
+                 model,
+                 loss_function,
+                 optimizer
+                 ):
         self.n_gpu = config["n_gpu"]
-        self.dev = self._prepare_device(self.n_gpu, use_cudnn=config["use_cudnn"])
+        self.device = self._prepare_device(self.n_gpu, config["use_cudnn"])
 
-        self.model = model.to(self.dev)
+        self.model = model.to(self.device)
         if self.n_gpu > 1:
             self.model = torch.nn.DataParallel(self.model, device_ids=list(range(self.n_gpu)))
 
-        self.optimizer = optim
+        self.optimizer = optimizer
         self.loss_function = loss_function
+
+        # Trainer
         self.epochs = config["trainer"]["epochs"]
-        self.save_period = config["trainer"]["save_period"]
-        self.validation_period = config["trainer"]["validation_period"]
-        self.start_epoch = 1  # 非配置项，当 resume == True 时，参数会被重置
-        self.best_score = 0.0  # 非配置项
-        self.save_location = Path(config["save_location"])
-        self.root_dir = self.save_location / config["name"]
+        self.save_checkpoint_interval = config["trainer"]["save_checkpoint_interval"]
+        self.validation_interval = config["trainer"]["validation_interval"]
+        self.find_max = config["trainer"]["find_max"]
+        self.visualize_audio_limit = config["trainer"]["visualize_audio_limit"]
+        self.visualize_waveform_limit = config["trainer"]["visualize_waveform_limit"]
+
+        self.start_epoch = 1  # Not in the config file, will be update if resume is True
+        self.best_score = 0.0 if self.find_max else 100  # Not in the config file, will be update in training and if resume is True
+        self.root_dir = Path(config["save_location"]) / config["experiment_name"]
         self.checkpoints_dir = self.root_dir / "checkpoints"
-        self.tensorboardX_logs_dir = self.root_dir / "logs"
-        self._prepare_empty_dir([
-            self.save_location,
-            self.root_dir,
-            self.checkpoints_dir,
-            self.tensorboardX_logs_dir
-        ], resume)
-        self.viz = TensorboardXWriter(self.tensorboardX_logs_dir.as_posix())
-        self.viz.writer.add_text("Configuration", "```json\n" + json.dumps(config, indent=2, sort_keys=False) + "\n```", global_step=1)
+        self.logs_dir = self.root_dir / "logs"
+        prepare_empty_dir([self.checkpoints_dir, self.logs_dir], resume)
+
+        self.viz = TensorboardWriter(self.logs_dir.as_posix())
+        self.viz.writer.add_text("Config", json.dumps(config, indent=2, sort_keys=False), global_step=1)
         self.viz.writer.add_text("Description", config["description"], global_step=1)
 
         if resume: self._resume_checkpoint()
 
-        print("模型，优化器，参数，目录初始化完毕，本实验中使用的配置信息如下：")
+        print("Model, optimizer, parameters and directories initialized.")
+        print("Configurations are as follows: ")
         print(json.dumps(config, indent=2, sort_keys=False))
-        config_save_path = os.path.join(self.root_dir, "config.json")
-        write_json(config, config_save_path)
+
+        config_save_path = (self.root_dir / "config.json").as_posix()
+        with open(config_save_path, "w") as handle:
+            json.dump(config, handle, indent=2, sort_keys=False)
         self._print_networks([self.model])
-
-
-    def _resume_checkpoint(self):
-        """恢复至最近一次的模型断点
-
-        恢复至最近一次的模型断点。模型加载时要特殊留意，如果模型是 DataParallel 的实例，需要读取 model.module.*
-
-        """
-
-        latest_model_path = self.checkpoints_dir / "latest_model.tar"
-
-        if latest_model_path.exists():
-            print(f"正在加载最近一次保存的模型断点 {latest_model_path}")
-
-            checkpoint = torch.load(latest_model_path.as_posix(), map_location=self.dev)
-            self.start_epoch = checkpoint["epoch"] + 1
-            self.best_score = checkpoint["best_score"]
-            self.optimizer.load_state_dict(checkpoint["optim_state_dict"])
-            if isinstance(self.model, torch.nn.DataParallel):
-                self.model.module.load_state_dict(checkpoint["model_state_dict"])
-            else:
-                self.model.load_state_dict(checkpoint["model_state_dict"])
-
-            print("断点已被加载，将从 epoch = {} 处开始训练.".format(self.start_epoch))
-        else:
-            print(f"{latest_model_path} 不存在，无法加载最近一次保存的模型断点")
-
-
-    def _save_checkpoint(self, epoch, is_best=False):
-        """存储模型断点
-
-        将模型断点存储至 checkpoints 目录，包含：
-            - 当前轮次数
-            - 历史上最高的得分
-            - 优化器参数
-            - 模型参数
-
-        Args:
-            epoch:
-            is_best:
-
-        """
-
-        print("正在存储模型断点，epoch = {} ...".format(epoch))
-
-        # 构建待存储的数据字典
-        state_dict = {
-            "epoch": epoch,
-            "best_score": self.best_score,
-            "optim_state_dict": self.optimizer.state_dict(),
-        }
-        if self.dev.type == "cuda" and self.n_gpu > 1:
-            state_dict["model_state_dict"] = self.model.module.cpu().state_dict()
-        else:
-            state_dict["model_state_dict"] = self.model.cpu().state_dict()
-
-        # 存储三个数据字典
-        torch.save(state_dict, (self.checkpoints_dir / "latest_model.tar").as_posix())
-        torch.save(state_dict, (self.checkpoints_dir / f"model_{str(epoch).zfill(3)}.tar").as_posix())
-        if is_best:
-            print("发现最优模型，正在存储中， epoch = {} ...".format(epoch))
-            torch.save(state_dict, (self.checkpoints_dir / "best_model.tar").as_posix())
-
-        self.model.to(self.dev)  # model.cpu() 会将模型转移至 CPU，此时需要将模型重新转至 GPU
-
 
     @staticmethod
     def _print_networks(nets: list):
-        print(f"当前模型包含 {len(nets)} 个子网络，参数信息如下：")
+        print(f"This project contains {len(nets)} networks, the number of the parameters: ")
         params_of_all_networks = 0
         for i, net in enumerate(nets, start=1):
             params_of_network = 0
             for param in net.parameters():
                 params_of_network += param.numel()
 
-            print(f"\t子网络 {i}： {params_of_network / 1e6} 百万个.")
+            print(f"\tNetwork {i}: {params_of_network / 1e6} million.")
             params_of_all_networks += params_of_network
 
-        print(f"参数数量总计为 {params_of_all_networks / 1e6} 百万个.")
-
-
-    @staticmethod
-    def _prepare_empty_dir(dirs, resume):
-        for dir_path in dirs:
-            if resume:
-                assert dir_path.exists()
-            else:
-                dir_path.mkdir(parents=True, exist_ok=True)
-
+        print(f"The amount of parameters in the project is {params_of_all_networks / 1e6} million.")
 
     @staticmethod
     def _prepare_device(n_gpu: int, use_cudnn=True):
         """
-        根据 n_gpu 的大小选择使用 CPU 或 GPU
+        Choose to use CPU or GPU depend on "n_gpu".
 
         Args:
-            n_gpu(int): 实验使用 GPU 的数量，当 n_gpu 为 0 时，使用 CPU，n_gpu > 1时，使用
+            n_gpu(int): the number of GPUs used in the experiment.
+            if n_gpu is 0, use CPU,
+            if n_gpu > 1, use GPU.
 
         Note:
-            1. 运行 train.py 脚本时需要设置可见 GPU，此时修改第一块 GPU 的起始位置，否则默认加载模型只能在绝对位置的 cuda:0 上
-            2. 在当前项目初始时设置可见的 GPU 后，项目中只能使用相对编号
-            3. cudnn benchmark 会自动寻找算法来优化固定大小的输入时的计算，如果考虑实验的可重复性，可以设置：
-                torch.backends.cudnn.deterministic = True
-               即使用固定的算法，会有一些性能的影响，但是能保证可重复性
+            1. In train.py, we can set the visibility of the GPUs.
+            3. cudnn.benchmark will find algorithms to optimize training. if we need to consider the repeatability of experiment, set use_cudnn to False.
         """
         use_cpu = False
 
         if n_gpu == 0:
             use_cpu = True
-            print("实验将使用 CPU.")
+            print("Using CPU in the experiment.")
         else:
             assert n_gpu <= torch.cuda.device_count(), \
-                f"使用 GPU 数量为 {n_gpu}，大于系统拥有的 GPU 数量 {torch.cuda.device_count()}"
+                f"The number of GPUs is {n_gpu}, which is large than the GPUs actually owned ({torch.cuda.device_count()}) in the machine."
 
             if use_cudnn:
-                print("实验将使用 Cudnn，实验结果可能无法重复.")
+                print("Using CuDNN in the experiment.")
                 torch.backends.cudnn.enabled = True
                 torch.backends.cudnn.benchmark = True
             else:
-                print("实验未使用 Cudnn.")
+                print("No CuDNN in this experiment.")
 
         device = torch.device("cpu" if use_cpu else "cuda:0")
 
         return device
 
+    def _resume_checkpoint(self):
+        """
+        Resume experiment to latest model checkpoint.
+
+        Notes:
+            To be careful at Loading model. if model is an instance of DataParallel, we need to set model.module.*
+        """
+        latest_model_path = self.checkpoints_dir / "latest_model.tar"
+
+        if latest_model_path.exists():
+            print(f"Loading the latest model checkpoint in {latest_model_path}.")
+
+            checkpoint = torch.load(latest_model_path.as_posix(), map_location=self.device)
+
+            self.start_epoch = checkpoint["epoch"] + 1
+            self.best_score = checkpoint["best_score"]
+            self.optimizer.load_state_dict(checkpoint["optimizer"])
+
+            if isinstance(self.model, torch.nn.DataParallel):
+                self.model.module.load_state_dict(checkpoint["model"])
+            else:
+                self.model.load_state_dict(checkpoint["model"])
+
+            print(f"Model checkpoint loaded. Training will begin in the {self.start_epoch} epoch.")
+        else:
+            print(f"{latest_model_path} does not exist, can't load latest model checkpoint.")
+
+    def _set_model_to_train_mode(self):
+        self.model.train()
+
+    def _set_model_to_eval_mode(self):
+        self.model.eval()
+
+    def _is_best_score(self, score, find_max=True):
+        """Check if the current model is the best model"""
+        if find_max and score >= self.best_score:
+            self.best_score = score
+            return True
+        elif not find_max and score <= self.best_score:
+            self.best_score = score
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def _transform_pesq_range(pesq_score):
+        """transform [-0.5 ~ 4.5] to [0 ~ 1]"""
+        return (pesq_score + 0.5) * 5
+
+    def _save_checkpoint(self, epoch, is_best=False):
+        """
+        Save model checkpoints to <root_dir>/checkpoints directory, contain:
+            - current epoch
+            - best score in history
+            - optimizer parameters
+            - model parameters
+
+        Args:
+            is_best(bool): if current checkpoint got the best score, it also will be saved in <root_dir>/checkpoints/best_model.tar.
+        """
+
+        print(f"\t Saving {epoch} epoch model checkpoint...")
+
+        # Construct checkpoint tar package
+        state_dict = {
+            "epoch": epoch,
+            "best_score": self.best_score,
+            "model": None,
+            "optimizer": self.optimizer.state_dict(),
+        }
+
+        if self.device.type == "cuda" and self.n_gpu > 1:
+            # Parallel
+            state_dict["model"] = self.model.module.cpu().state_dict()
+        else:
+            state_dict["model"] = self.model.cpu().state_dict()
+
+        """
+        Notes:
+            - latest_model.tar:
+                Contains all checkpoint information, including optimizer parameters, model parameters, etc. 
+                New checkpoint will overwrite old one.
+            - generator_<epoch>.pth: 
+                The parameters of generator network. Follow-up we can specify epoch to inference.
+            - best_model.tar:
+                Like latest_model, but only saved when <is_best> is True.
+        """
+        torch.save(state_dict, (self.checkpoints_dir / "latest_model.tar").as_posix())
+        torch.save(state_dict["model"], (self.checkpoints_dir / f"model_{str(epoch).zfill(4)}.pth").as_posix())
+        if is_best:
+            print(f"\t Found best score in {epoch} epoch, saving...")
+            torch.save(state_dict, (self.checkpoints_dir / "best_model.tar").as_posix())
+
+        # Use model.cpu(), model.to("cpu") will migrate the model to CPU. at which point we need re-migrate model back.
+        # No matter tensor.cuda() or torch.to("cuda"), if tensor in CPU, the tensor will not be migrated to GPU, but the model will.
+        self.model.to(self.device)
+
+    def train(self):
+        for epoch in range(self.start_epoch, self.epochs + 1):
+            print(f"============== {epoch} epoch ==============")
+            print("[0 seconds] Begin training...")
+            timer = ExecutionTime()
+
+            self._set_model_to_train_mode()
+            self._train_epoch(epoch)
+
+            if self.save_checkpoint_interval != 0 and epoch % self.save_checkpoint_interval == 0:
+                self._save_checkpoint(epoch)
+
+            if self.validation_interval != 0 and epoch % self.validation_interval == 0:
+                print(f"[{timer.duration()} seconds] Training is over, Validation is in progress...")
+                self._set_model_to_eval_mode()
+                score = self._validation_epoch(epoch)
+
+                if self._is_best_score(score, find_max=self.find_max):
+                    self._save_checkpoint(epoch, is_best=True)
+
+            print(f"[{timer.duration()} seconds] End this epoch.")
 
     def _train_epoch(self, epoch):
         raise NotImplementedError
 
-
-    def train(self):
+    def _validation_epoch(self, epoch):
         raise NotImplementedError

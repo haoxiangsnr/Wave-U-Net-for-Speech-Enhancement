@@ -1,15 +1,6 @@
-import matplotlib.pyplot as plt
-import tensorboardX
+from torch.utils.tensorboard import SummaryWriter
 
 
-plt.switch_backend('agg')
-
-
-class TensorboardXWriter:
-    def __init__(self, tensorboardX_logs_dir):
-        self.writer = tensorboardX.SummaryWriter(tensorboardX_logs_dir)
-        self.epoch = 0
-
-
-    def set_epoch(self, epoch):
-        self.epoch = epoch
+class TensorboardWriter:
+    def __init__(self, logs_dir):
+        self.writer = SummaryWriter(logs_dir, flush_secs=30)
