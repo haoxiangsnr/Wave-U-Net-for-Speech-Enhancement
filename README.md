@@ -82,7 +82,7 @@ TODO
 
 ## 可视化
 
-训练中产生的所有日志信息都会存储至`config["save_location"]/<filename>/`目录下。假设用于训练的配置文件为`config/train/sample_16384.json`，`sample_16384.json`中`save_location`参数的值为`/home/UNet/`，那么当前实验训练过程中产生的日志会存储在 `/home/UNet/sample_16384/` 目录下。
+训练中产生的所有日志信息都会存储至`config["save_location"]/<config_filename>/`目录下。假设用于训练的配置文件为`config/train/sample_16384.json`，`sample_16384.json`中`save_location`参数的值为`/home/UNet/`，那么当前实验训练过程中产生的日志会存储在 `/home/UNet/sample_16384/` 目录下。
 该目录会包含以下内容：
 
 - `logs/`目录: 存储 Tensorboard 相关的数据，包含损失曲线，波形文件，语音文件等
@@ -92,10 +92,14 @@ TODO
 在训练过程中可以使用 `tensorboard` 来启动一个静态的前端服务器，可视化相关目录中的日志数据:
 
 ```shell script
-tensorboard --logdir config["save_location"]/<filename>/
+tensorboard --logdir config["save_location"]/<config_filename>/
 
 # 可使用 --port 指定 tensorboard 静态服务器的启动端口
-tensorboard --logdir config["save_location"]/<filename>/ --port <port>
+tensorboard --logdir config["save_location"]/<config_filename>/ --port <port>
+
+# 例如，配置文件中的 "save_location" 参数为 "/home/happy/Experiments"，配置文件名为 "train_config.json"，修改默认端口为 6000
+# 可使用如下命令：
+tensorboard --logdir /home/happy/Experiments/train_config --port 6000
 ```
 
 ## 目录说明
