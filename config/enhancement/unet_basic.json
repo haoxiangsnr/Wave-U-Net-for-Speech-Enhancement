@@ -1,0 +1,17 @@
+{
+    "model": {
+        "module": "model.unet_basic",
+        "main": "UNet",
+        "args": {}
+    },
+    "dataset": {
+        "module": "dataset.waveform_dataset_enhancement",
+        "main": "WaveformDataset",
+        "args": {
+            "dataset": "/home/imucs/tmp/UNet_and_Inpainting/data.txt",
+            "limit": 400,
+            "offset": 0,
+            "sample_length": 16384
+        }
+    }
+}

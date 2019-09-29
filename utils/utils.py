@@ -1,5 +1,6 @@
 import importlib
 import time
+import os
 
 import torch
 from pypesq import pesq
@@ -7,9 +8,17 @@ import numpy as np
 from pystoi.stoi import stoi
 
 
-def remove_extra_tail(m, size=256):
-    assert m.shape[1] >= size, "len(y) should be large than size."
-    return m[:, : - (m.shape[1] % size)]
+def load_checkpoint(checkpoint_path, device):
+    _, ext = os.path.splitext(os.path.basename(checkpoint_path))
+    assert ext in (".pth", ".tar"), "Only support ext and tar extensions of model checkpoint."
+    model_checkpoint = torch.load(checkpoint_path, map_location=device)
+
+    if ext == ".pth":
+        print(f"Loading {checkpoint_path}.")
+        return model_checkpoint
+    else:  # tar
+        print(f"Loading {checkpoint_path}, epoch = {model_checkpoint['epoch']}.")
+        return model_checkpoint["model"]
 
 
 def prepare_empty_dir(dirs, resume=False):

@@ -1,58 +1,60 @@
 {
-  "seed": 0,
-  "description": "attempt",
-  "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/Wave-U-Net-for-Speech-Enhancement",
-  "n_gpu": 4,
-  "use_cudnn": true,
-  "trainer": {
-    "epochs": 1200,
-    "save_checkpoint_interval": 10,
-    "validation_interval": 10,
-    "visualize_audio_limit": 30,
-    "visualize_waveform_limit": 30,
-    "find_max": true
-  },
-  "model": {
-    "module": "model.unet_basic",
-    "main": "UNet",
-    "args": {}
-  },
-  "loss_function": {
-    "module": "model.loss",
-    "main": "mse_loss",
-    "args": {}
-  },
-  "optimizer": {
-    "lr": 0.0002,
-    "beta1": 0.9
-  },
-  "train_dataset": {
-    "module": "dataset.waveform_dataset",
-    "main": "WaveformDataset",
-    "args": {
-      "dataset": "/home/imucs/Datasets/2019-09-03-timit_train-900_test-50/train.txt",
-      "limit": null,
-      "offset": 0,
-      "sample_length": 16384
+    "seed": 0,
+    "description": "attempt",
+    "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/Wave-U-Net-for-Speech-Enhancement",
+    "n_gpu": 4,
+    "use_cudnn": true,
+    "trainer": {
+        "epochs": 1200,
+        "save_checkpoint_interval": 10,
+        "validation_interval": 10,
+        "visualize_audio_limit": 30,
+        "visualize_waveform_limit": 30,
+        "find_max": true
+    },
+    "model": {
+        "module": "model.unet_basic",
+        "main": "UNet",
+        "args": {}
+    },
+    "loss_function": {
+        "module": "model.loss",
+        "main": "mse_loss",
+        "args": {}
+    },
+    "optimizer": {
+        "lr": 0.0002,
+        "beta1": 0.9
+    },
+    "train_dataset": {
+        "module": "dataset.waveform_dataset",
+        "main": "WaveformDataset",
+        "args": {
+            "dataset": "/home/imucs/Datasets/2019-09-03-timit_train-900_test-50/train.txt",
+            "limit": null,
+            "offset": 0,
+            "sample_length": 16384,
+            "train": true
+        }
+    },
+    "validation_dataset": {
+        "module": "dataset.waveform_dataset",
+        "main": "WaveformDataset",
+        "args": {
+            "dataset": "/home/imucs/Datasets/2019-09-03-timit_train-900_test-50/test.txt",
+            "limit": 400,
+            "offset": 0,
+            "sample_length": 16384,
+            "train": false
+        }
+    },
+    "train_dataloader": {
+        "shuffle": true,
+        "num_workers": 40,
+        "batch_size": 800
+    },
+    "validation_dataloader": {
+        "num_workers": 0,
+        "batch_size": 1
     }
-  },
-  "validation_dataset": {
-    "module": "dataset.waveform_dataset",
-    "main": "WaveformDataset",
-    "args": {
-      "dataset": "/home/imucs/Datasets/2019-09-03-timit_train-900_test-50/test.txt",
-      "limit": 400,
-      "offset": 0,
-      "sample_length": null
-    }
-  },
-  "train_dataloader": {
-    "shuffle": true,
-    "num_workers": 40,
-    "batch_size": 800
-  },
-  "validation_dataloader": {
-    "num_workers": 0,
-    "batch_size": 1
-  }
 }

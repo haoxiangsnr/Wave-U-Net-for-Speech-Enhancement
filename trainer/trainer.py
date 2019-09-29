@@ -44,20 +44,21 @@ class Trainer(BaseTrainer):
 
     @torch.no_grad()
     def _validation_epoch(self, epoch):
-        sample_length = self.train_data_loader.dataset.sample_length
+        sample_length = self.validation_data_loader.dataset.sample_length
         stoi_c_n = []
         stoi_c_d = []
         pesq_c_n = []
         pesq_c_d = []
 
         for i, (mixture, clean, name) in enumerate(self.validation_data_loader):
+            assert len(name) == 0, "Only support batch size is 1 in enhancement stage."
             name = name[0]
 
-            # [batch_size, 1, T]
+            # [1, 1, T]
             mixture = mixture.to(self.device)
             clean = clean.to(self.device)
 
-            # Input is fixed length
+            # Input of model should fixed length
             mixture_chunks = torch.split(mixture, sample_length, dim=2)
             if mixture_chunks[-1].shape[-1] != sample_length:
                 mixture_chunks = mixture_chunks[:-1]
