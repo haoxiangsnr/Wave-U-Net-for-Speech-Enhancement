@@ -51,7 +51,7 @@ class Trainer(BaseTrainer):
         pesq_c_d = []
 
         for i, (mixture, clean, name) in enumerate(self.validation_data_loader):
-            assert len(name) == 0, "Only support batch size is 1 in enhancement stage."
+            assert len(name) == 1, "Only support batch size is 1 in enhancement stage."
             name = name[0]
 
             # [1, 1, T]
