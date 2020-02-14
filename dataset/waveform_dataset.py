@@ -31,7 +31,7 @@ class WaveformDataset(Dataset):
             (mixture signals, clean signals, file name)
         """
         super(WaveformDataset, self).__init__()
-        dataset_list = [line.rstrip('\n') for line in open(dataset, "r")]
+        dataset_list = [line.rstrip('\n') for line in open(os.path.abspath(os.path.expanduser(dataset)), "r")]
 
         dataset_list = dataset_list[offset:]
         if limit:
@@ -50,8 +50,8 @@ class WaveformDataset(Dataset):
         mixture_path, clean_path = self.dataset_list[item].split(" ")
         name = os.path.splitext(os.path.basename(mixture_path))[0]
 
-        mixture, _ = librosa.load(mixture_path, sr=None)
-        clean, _ = librosa.load(clean_path, sr=None)
+        mixture, _ = librosa.load(os.path.abspath(os.path.expanduser(mixture_path)), sr=None)
+        clean, _ = librosa.load(os.path.abspath(os.path.expanduser(clean_path)), sr=None)
 
         if self.train:
             # The input of model should be fixed length.

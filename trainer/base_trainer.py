@@ -35,7 +35,7 @@ class BaseTrainer:
 
         self.start_epoch = 1  # Not in the config file, will be update if resume is True
         self.best_score = 0.0 if self.find_max else 100  # Not in the config file, will be update in training and if resume is True
-        self.root_dir = Path(config["save_location"]) / config["experiment_name"]
+        self.root_dir = Path(config["save_location"]).expanduser().absolute() / config["experiment_name"]
         self.checkpoints_dir = self.root_dir / "checkpoints"
         self.logs_dir = self.root_dir / "logs"
         prepare_empty_dir([self.checkpoints_dir, self.logs_dir], resume)

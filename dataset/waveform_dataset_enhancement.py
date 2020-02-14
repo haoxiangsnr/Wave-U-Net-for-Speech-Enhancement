@@ -30,7 +30,8 @@ class WaveformDataset(Dataset):
             (mixture signals, clean signals, file name)
         """
         super(WaveformDataset, self).__init__()
-        dataset_list = [line.rstrip('\n') for line in open(dataset, "r")]
+        dataset_list = [line.rstrip('\n') for line in open(os.path.abspath(os.path.expanduser(dataset)), "r")]
+        
 
         dataset_list = dataset_list[offset:]
         if limit:
@@ -49,6 +50,6 @@ class WaveformDataset(Dataset):
         mixture_path = self.dataset_list[item]
         name = os.path.splitext(os.path.basename(mixture_path))[0]
 
-        mixture, _ = librosa.load(mixture_path, sr=None)
+        mixture, _ = librosa.load(os.path.abspath(os.path.expanduser(mixture_path)), sr=None)
 
         return mixture.reshape(1, -1), name

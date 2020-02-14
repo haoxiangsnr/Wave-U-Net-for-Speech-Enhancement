@@ -29,7 +29,7 @@ conda install tensorflow-gpu
 conda install matplotlib
 pip install tqdm librosa
 pip install pystoi # for STOI metric
-pip install https://github.com/vBaiCai/python-pesq/archive/master.zip # for PESQ metric
+pip install pesq # for PESQ metric
 
 # 配置好环境与依赖之后，可以拉取代码
 git clone https://github.com/haoxiangsnr/Wave-U-Net-for-Speech-Enhancement.git
