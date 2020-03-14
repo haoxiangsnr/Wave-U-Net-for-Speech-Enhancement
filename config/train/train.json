@@ -1,20 +1,27 @@
 {
     "seed": 0,
-    "description": "attempt",
-    "save_location": "~/Experiments/SA-SE",
-    "n_gpu": 2,
-    "use_cudnn": true,
+    "description": "...",
+    "root_dir": "~/Experiments/Wave-U-Net",
+    "cudnn_deterministic": false,
     "trainer": {
+        "module": "trainer.trainer",
+        "main": "Trainer",
         "epochs": 1200,
         "save_checkpoint_interval": 10,
-        "validation_interval": 1,
-        "visualize_audio_limit": 30,
-        "visualize_waveform_limit": 30,
-        "find_max": true
+        "validation": {
+            "interval": 10,
+            "find_max": true,
+            "custom": {
+                "visualize_audio_limit": 20,
+                "visualize_waveform_limit": 20,
+                "visualize_spectrogram_limit": 20,
+                "sample_length": 16384
+            }
+        }
     },
     "model": {
         "module": "model.unet_basic",
-        "main": "UNet",
+        "main": "Model",
         "args": {}
     },
     "loss_function": {
@@ -23,38 +30,35 @@
         "args": {}
     },
     "optimizer": {
-        "lr": 0.0002,
-        "beta1": 0.9
+        "lr": 0.001,
+        "beta1": 0.9,
+        "beta2": 0.999
     },
     "train_dataset": {
         "module": "dataset.waveform_dataset",
-        "main": "WaveformDataset",
+        "main": "Dataset",
         "args": {
             "dataset": "~/Datasets/SEGAN_Dataset/train_dataset.txt",
             "limit": null,
             "offset": 0,
             "sample_length": 16384,
-            "train": true
+            "mode": "train"
         }
     },
     "validation_dataset": {
         "module": "dataset.waveform_dataset",
-        "main": "WaveformDataset",
+        "main": "Dataset",
         "args": {
             "dataset": "~/Datasets/SEGAN_Dataset/test_dataset.txt",
             "limit": 400,
             "offset": 0,
-            "sample_length": 16384,
-            "train": false
+            "mode": "validation"
         }
     },
     "train_dataloader": {
-        "shuffle": true,
+        "batch_size": 120,
         "num_workers": 40,
-        "batch_size": 200
-    },
-    "validation_dataloader": {
-        "num_workers": 0,
-        "batch_size": 1
+        "shuffle": true,
+        "pin_memory": true
     }
 }

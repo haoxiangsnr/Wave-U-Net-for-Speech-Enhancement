@@ -1,11 +1,10 @@
 import os
 from torch.utils.data import Dataset
 import librosa
-from utils.utils import sample_fixed_length_data_aligned
 
 
 class WaveformDataset(Dataset):
-    def __init__(self, dataset, limit=None, offset=0, sample_length=16384, train=True):
+    def __init__(self, dataset, limit=None, offset=0, sample_length=16384):
         """
         构建增强数据集
         Args:
@@ -16,10 +15,10 @@ class WaveformDataset(Dataset):
 
         Notes:
             语音数据集格式如下：
-            <带噪语音1的绝对路径>
-            <带噪语音2的绝对路径>
+            <带噪语音1的路径>
+            <带噪语音2的路径>
             ...
-            <带噪语音n的绝对路径>
+            <带噪语音n的路径>
 
             eg:
             /enhancement/noisy/a.wav
@@ -31,7 +30,6 @@ class WaveformDataset(Dataset):
         """
         super(WaveformDataset, self).__init__()
         dataset_list = [line.rstrip('\n') for line in open(os.path.abspath(os.path.expanduser(dataset)), "r")]
-        
 
         dataset_list = dataset_list[offset:]
         if limit:
@@ -40,13 +38,11 @@ class WaveformDataset(Dataset):
         self.length = len(dataset_list)
         self.dataset_list = dataset_list
         self.sample_length = sample_length
-        self.train = train
 
     def __len__(self):
         return self.length
 
     def __getitem__(self, item):
-
         mixture_path = self.dataset_list[item]
         name = os.path.splitext(os.path.basename(mixture_path))[0]
 

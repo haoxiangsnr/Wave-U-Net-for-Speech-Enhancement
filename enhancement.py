@@ -7,7 +7,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from utils.utils import initialize_config, load_checkpoint
+from util.utils import initialize_config, load_checkpoint
 
 """
 Parameters

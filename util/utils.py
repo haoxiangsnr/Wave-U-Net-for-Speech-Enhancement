@@ -52,23 +52,26 @@ class ExecutionTime:
         return int(time.time() - self.start_time)
 
 
-def initialize_config(module_cfg):
+def initialize_config(module_cfg, pass_args=True):
     """
     According to config items, load specific module dynamically with params.
-
     eg，config items as follow：
         module_cfg = {
             "module": "model.model",
             "main": "Model",
             "args": {...}
         }
-
     1. Load the module corresponding to the "module" param.
     2. Call function (or instantiate class) corresponding to the "main" param.
     3. Send the param (in "args") into the function (or class) when calling ( or instantiating)
     """
     module = importlib.import_module(module_cfg["module"])
-    return getattr(module, module_cfg["main"])(**module_cfg["args"])
+
+    if pass_args:
+        return getattr(module, module_cfg["main"])(**module_cfg["args"])
+    else:
+        return getattr(module, module_cfg["main"])
+
 
 
 def compute_PESQ(clean_signal, noisy_signal, sr=16000):
