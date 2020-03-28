@@ -1,6 +1,6 @@
 # Wave-U-Net-for-Speech-Enhancement
 
-Implement [Wave-U-Net](https://arxiv.org/abs/1806.03185) by PyTorch, and migrate it to the speech enhancement area.
+Implement [Wave-U-Net](https://arxiv.org/abs/1806.03185) by PyTorch, and migrate it to the speech enhancement.
 
 ![](./doc/tensorboard.png)
 ![](./doc/audio.png)
@@ -45,26 +45,32 @@ git clone https://github.com/haoxiangsnr/Wave-U-Net-for-Speech-Enhancement.git
 
 ### 训练
 
-使用 `train.py` 训练模型，它接收四个命令行参数：
+使用 `train.py` 训练模型，它接收三个命令行参数：
 
 - `-h`，显示帮助信息
 - `-C, --config`，指定训练所需的配置文件
-- `-D, --device`，指定训练过程中可见的 GPU，GPU 编号从 0 开始，例如："0,1,2,3"
-- `R, --resume`，从最近一次保存的模型断点处继续训练
+- `-R, --resume`，从最近一次保存的模型断点处继续训练
 
-语法：`python train.py [-h] -C CONFIG [-D DEVICE] [-R]`
+语法：`python train.py [-h] -C CONFIG [-R]`
 
 例如：
 
 ```shell script
-python train.py -C config/train.json -D 0,1,2,3
+python train.py -C config/train.json
 # 训练模型所用的配置文件为 config/train.json
-# 训练中可见的 GPU 是索引为 0,1,2,3 的 GPU
+# 使用所有的 GPU 进行训练
 
-python train.py -C config/train.json -D 1,2,3 -R
+python train.py -C config/train.json -R
 # 训练模型所用的配置文件为 config/train.json
-# 训练中可见的 GPU 是索引为 1,2,3 的 GPU
-# 从最近一次保存的模型断点继续训练
+# 使用所有的 GPU 从最近一次保存的模型断点继续训练
+
+CUDA_VISIBLE_DEVICES=1,2 python train.py -C config/train.json
+# 训练模型所用的配置文件为 config/train.json
+# 使用 1,2 号索引的GPU进行训练
+
+CUDA_VISIBLE_DEVICES=-1 python train.py -C config/train.json
+# 训练模型所用的配置文件为 config/train.json
+# 使用 CPU 进行训练
 ```
 
 补充：
@@ -145,62 +151,66 @@ tensorboard --logdir /home/happy/Experiments/train_config --port 6000
 ```json5
 {
     "seed": 0, // 保证实验可重复性的随机种子
-    "description": "attempt",  // 实验描述，后续会显示在 Tensorboard 中
-    "save_location": "/media/imucs/DataDisk/haoxiang/Experiment/Wave-U-Net-for-Speech-Enhancement", // 当前实验项目的存储位置
-    "n_gpu": 4, // 实际使用的 GPU 数量，应小于或等于 train.py -D 参数指定的可见数量
-    "use_cudnn": true, // 是否使用 CuDNN，使用 CuDNN 无法保证实验可重复性
-        "trainer": { // 训练过程
-        "epochs": 1000, // 训练的上限
-        "save_checkpoint_interval": 10, // 模型断点的缓存间隔
-        "validation_interval": 10, // 验证的间隔
-        "visualize_audio_limit": 30, // 验证时可视化音频的间隔，之所以设置这个参数，是因为可视化音频比较慢
-        "visualize_waveform_limit": 30, // 验证时可视化波形的间隔，之所以设置这个参数，是因为可视化波形比较慢
-        "find_max": true // 当 find_max 为 true 时，如果计算出的评价指标为已知的最大值，就会将当前轮次的模型断点另外缓存一份
-        },
+    "description": "...",  // 实验描述，后续会显示在 Tensorboard 中
+    "root_dir": "~/Experiments/Wave-U-Net", //存放实验结果的目录
+    "cudnn_deterministic": false,
+    "trainer": { // 训练过程
+        "module": "trainer.trainer", // 训练器模型的文件
+        "main": "Trainer", // 训练器模型的具体类
+        "epochs": 1200, // 训练的上限
+        "save_checkpoint_interval": 10, // 保存模型断点的间隔
+        "validation":{
+        "interval": 10, // 验证的间隔
+         "find_max": true, // 当 find_max 为 true 时，如果计算出的评价指标为已知的最大值，就会将当前轮次的模型断点另外缓存一份
+        "custon": {
+            "visualize_audio_limit": 20, // 验证时可视化音频的间隔，之所以设置这个参数，是因为可视化音频比较慢
+            "visualize_waveform_limit": 20, // 验证时可视化波形的间隔，之所以设置这个参数，是因为可视化波形比较慢
+            "visualize_spectrogram_limit": 20, //验证可视化频谱的间隔，之所以设置这个参数，是因为可视化频谱比较慢
+            "sample_length": 16384 //采样点数
+            } 
+        }
+    },
     "model": {
-        "module": "model.unet_basic", // 放置模型的文件
-        "main": "UNet", // 文件内的具体模型类
+        "module": "model.unet_basic", // 训练使用的模型文件
+        "main": "Model", // 训练模型的具体类
         "args": {} // 传给模型类的参数
     },
     "loss_function": {
-        "module": "model.loss",
-        "main": "mse_loss",
-        "args": {}
+        "module": "model.loss", // 损失函数的模型文件
+        "main": "mse_loss", // 损失函数模型的具体类
+        "args": {} // 传给模型类的参数
     },
     "optimizer": {
-        "lr": 0.0002,
-        "beta1": 0.9
+        "lr": 0.001,
+        "beta1": 0.9,
+        "beat2": 0.009
     },
     "train_dataset": {
-        "module": "dataset.waveform_dataset", // 存放训练集类的文件
-        "main": "WaveformDataset", // 训练集类
+        "module": "dataset.waveform_dataset", // 存放训练集类模型的文件
+        "main": "Dataset", // 训练集模型的具体类
         "args": { // 传递给训练集类的参数，详见具体的训练集类
-            "dataset": "/home/imucs/Datasets/2019-09-03-timit_train-900_test-50/train.txt",
+            "dataset": "~/Datasets/SEGAN_Dataset/train_dataset.txt",
             "limit": null,
             "offset": 0,
             "sample_length": 16384,
-            "train": true 
+            "mode":"train"
         }
     },
     "validation_dataset": {
         "module": "dataset.waveform_dataset",
-        "main": "WaveformDataset",
+        "main": "Dataset",
         "args": {
-            "dataset": "/home/imucs/Datasets/2019-09-03-timit_train-900_test-50/test.txt",
+            "dataset": "~/Datasets/SEGAN_Dataset/test_dataset.txt",
             "limit": 400,
             "offset": 0,
-            "sample_length": 16384,
-            "train": false,
+            "mode":"validation"
         }
     },
     "train_dataloader": {
+        "batch_size": 120,
+        "num_workers": 40, // 开启多少个线程对数据进行预处理 
         "shuffle": true,
-        "num_workers": 40, // 开启多少个线程对数据进行预处理
-        "batch_size": 800
-    },
-    "validation_dataloader": {
-        "num_workers": 0, // 直接由主进程加载
-        "batch_size": 1
+        "pin_memory":true
     }
 }
 ```
