@@ -5,181 +5,174 @@ Implement [Wave-U-Net](https://arxiv.org/abs/1806.03185) by PyTorch, and migrate
 ![](./doc/tensorboard.png)
 ![](./doc/audio.png)
 
-## 环境与依赖
+## Dependencies
 
 
 ```shell
-# Make sure the /bin of CUDA added to PATH enveriment variable.
-# Add 
-# 通过附加 LD_LIBRARY_PATH 环境变量来安装 CUDA 附带的 CUPTI
+# Make sure the /bin directory of CUDA be added to PATH enveriment variable
+# Install CUPTI included with CUDA by appending the LD_LIBRARY_PATH environment variable
 export PATH="/usr/local/cuda-10.0/bin:$PATH"
 export LD_LIBRARY_PATH="/usr/local/cuda-10.0/lib64:$LD_LIBRARY_PATH"
 
-# 安装 Anaconda，以清华镜像源，python 3.6.5为例
+# Install Anaconda, take Tsinghua mirror source and python 3.6.5 as an example
 wget https://mirrors.tuna.tsinghua.edu.cn/anaconda/archive/Anaconda3-5.2.0-Linux-x86_64.sh
 chmod a+x Anaconda3-5.2.0-Linux-x86_64.sh
-./Anaconda3-5.2.0-Linux-x86_64.sh # 按 f 翻页，默认安装在 ~/anaconda 目录下，安装过程会提示修改 PATH 变量
+./Anaconda3-5.2.0-Linux-x86_64.sh # Press f to turn the page, the default installation is in ~/anaconda directory, the installation process will prompt to modify the PATH variable
 
-# Create env
+# Create a virtual environment
 conda create -n wave-u-net python=3
 conda activate wave-u-net
 
-# Install deps
-conda install pytorch torchvision cudatoolkit=10.0 -c pytorch
-conda install tensorflow-gpu
+# Install dependencies
+conda install pytorch torchvision cudatoolkit=10.0 -c pytorch  # Pytorch 1.2.0 version has been tested
+conda install tensorflow-gpu  # Only for tensorboard
 conda install matplotlib
-pip install tqdm librosa
-pip install pystoi # for STOI metric
-pip install pesq # for PESQ metric
+pip install tqdm librosa pystoi pesq
 
-# 配置好环境与依赖之后，可以拉取代码
+# Clone
 git clone https://github.com/haoxiangsnr/Wave-U-Net-for-Speech-Enhancement.git
 ```
 
-## 使用方法
+## Usage
 
-当前项目有三个入口文件：
+There are two entry files for the current project:
 
-- 用于训练模型的入口文件：`train.py`
-- 用于增强带噪语音的入口文件：`enhancement.py`
-- 用于测试模型降噪能力的入口文件（TODO）：`test.py`
+- Entry file for training models: `train.py`
+- Entry file for enhance noisy speech: `enhancement.py`
 
-### 训练
+### Training
 
-使用 `train.py` 训练模型，它接收三个命令行参数：
+Use `train.py` to train the model. It receives three command line parameters:
 
-- `-h`，显示帮助信息
-- `-C, --config`，指定训练所需的配置文件
-- `-R, --resume`，从最近一次保存的模型断点处继续训练
+- `-h`, display help information
+- `-C, --config`, specify the configuration file required for training
+- `-R, --resume`, continue training from the checkpoint of the last saved model
 
-语法：`python train.py [-h] -C CONFIG [-R]`
+Syntax: `python train.py [-h] -C CONFIG [-R]`
 
-例如：
+E.g.:
 
 ```shell script
-python train.py -C config/train.json
-# 训练模型所用的配置文件为 config/train.json
-# 使用所有的 GPU 进行训练
+python train.py -C config/train/train.json
+# The configuration file used to train the model is "config/train/train.json"
+# Use all GPUs for training
 
-python train.py -C config/train.json -R
-# 训练模型所用的配置文件为 config/train.json
-# 使用所有的 GPU 从最近一次保存的模型断点继续训练
+python train.py -C config/train/train.json -R
+# The configuration file used to train the model is "config/train/train.json"
+# Use all GPUs to continue training from the last saved model checkpoint
 
-CUDA_VISIBLE_DEVICES=1,2 python train.py -C config/train.json
-# 训练模型所用的配置文件为 config/train.json
-# 使用 1,2 号索引的GPU进行训练
+CUDA_VISIBLE_DEVICES=1,2 python train.py -C config/train/train.json
+# The configuration file used to train the model is "config/train/train.json"
+# Use GPU No.1 and 2 for training
 
-CUDA_VISIBLE_DEVICES=-1 python train.py -C config/train.json
-# 训练模型所用的配置文件为 config/train.json
-# 使用 CPU 进行训练
+CUDA_VISIBLE_DEVICES=-1 python train.py -C config/train/train.json
+# The configuration file used to train the model is "config/train/train.json"
+# Use CPU for training
 ```
 
-补充：
-- 一般将训练所需要的配置文件放置于 `config/train/` 目录下
-- 训练配置文件中的参数见“参数说明”部分
-- 配置文件的文件名即是实验名
+Supplement:
 
-### 增强
+- Generally, the configuration files needed for training are placed in the `config/train` directory
+- See the "Parameter Description" section for the parameters in the training configuration file
+- The filename of the configuration file is the experiment name.
 
-使用 `enhancement.py` 来增强带噪语音，它接收以下参数：
+### Enhancement
 
--  `-h, --help`，显示帮助信息
--  `-C, --config`，指定增强语音所用的模型，以及被增强的数据集。
-- `-D, --device`，增强所用的 GPU 索引，-1 表示使用 CPU
-- `-O, --output_dir`，指定在哪里存储增强后的语音，需要确保这个目录提前存在
-- `-M, --model_checkpoint_path`，模型断点的路径，拓展名为 .tar 或 .pth
+Use `enhancement.py` to enhance noisy speech, which receives the following parameters:
 
-语法：`python enhancement.py [-h] -C CONFIG [-D DEVICE] -O OUTPUT_DIR -M MODEL_CHECKPOINT_PATH`
+- `-h, --help`, display help information
+- `-C, --config`, specify the model, the enhanced dataset, and custom args used to enhance the speech.
+- `-D, --device`, enhance the GPU index used, -1 means use CPU
+- `-O, --output_dir`, specify where to store the enhanced speech, you need to ensure that this directory exists in advance
+- `-M, --model_checkpoint_path`, the path of the model checkpoint, the extension of the checkpoint file is .tar or .pth
 
-例如：
+Syntax: `python enhancement.py [-h] -C CONFIG [-D DEVICE] -O OUTPUT_DIR -M MODEL_CHECKPOINT_PATH`
+
+E.g.:
 
 ```shell script
 python enhancement.py -C config/enhancement/unet_basic.json -D 0 -O enhanced -M /media/imucs/DataDisk/haoxiang/Experiment/Wave-U-Net-for-Speech-Enhancement/smooth_l1_loss/checkpoints/model_0020.pth
-# 增强语音所用的配置文件为 config/enhancement/unet_basic.json，使用这个文件可以指定增强所需的模型以及数据集信息
-# 使用索引为 0 的 GPU
-# 输出的目录为 enhanced/，该目录需要提前新建好
-# 指定模型断点的路径
+# The configuration file used to enhancement is "config/enhancement/unet_basic.json". Use this file to specify the model and dataset information required for enhancement
+# Use GPU with index 0
+# The output directory is "enhanced/", the directory needs to be created in advance
+# Specify the path of the model checkpoint
 
 python enhancement.py -C config/enhancement/unet_basic.json -D -1 -O enhanced -M /media/imucs/DataDisk/haoxiang/Experiment/Wave-U-Net-for-Speech-Enhancement/smooth_l1_loss/checkpoints/model_0020.tar
-# 使用 CPU 来增强语音
+# Use CPU for enhancement
 ```
 
-补充：
-- 一般将增强所需要的配置文件放置于 `config/enhancement/` 目录下
-- 增强配置文件中的参数见“参数说明”部分
+Supplement:
 
-### 测试
+- Generally, the configuration files needed for enhancement are placed in the `config/enhancement/` directory
+- See the "Parameter Description" section for the parameters in the enhancement configuration file.
 
-TODO
+## Visualization
 
+All log information generated during training will be stored in the `config["root_dir"]/<config_filename>/` directory. Assuming that the configuration file for training is `config/train/sample_16384.json`, the value of the` root_dir` parameter in `sample_16384.json` is` /home/UNet/`. Then, the logs generated during the current experimental training process will be stored In the `/home/UNet/sample_16384/` directory. The directory will contain the following:
 
-## 可视化
+- `logs/` directory: store Tensorboard related data, including loss curve, waveform file, speech file
+- `checkpoints/` directory: stores all checkpoints of the model, from which you can restart training or speech enhancement
+- `config.json` file: backup of the training configuration file
 
-训练中产生的所有日志信息都会存储至`config["save_location"]/<config_filename>/`目录下。假设用于训练的配置文件为`config/train/sample_16384.json`，`sample_16384.json`中`save_location`参数的值为`/home/UNet/`，那么当前实验训练过程中产生的日志会存储在 `/home/UNet/sample_16384/` 目录下。
-该目录会包含以下内容：
-
-- `logs/`目录: 存储 Tensorboard 相关的数据，包含损失曲线，波形文件，语音文件等
-- `checkpoints/`目录: 存储模型的所有断点，后续可从这些断点处重启训练或进行语音增强
-- `config.json`文件: 训练配置文件的备份
-
-在训练过程中可以使用 `tensorboard` 来启动一个静态的前端服务器，可视化相关目录中的日志数据:
+During the training process, we can use `tensorboard` to start a static front-end server to visualize the log data in the relevant directory:
 
 ```shell script
-tensorboard --logdir config["save_location"]/<config_filename>/
+tensorboard --logdir config["root_dir"]/<config_filename>/
 
-# 可使用 --port 指定 tensorboard 静态服务器的启动端口
-tensorboard --logdir config["save_location"]/<config_filename>/ --port <port>
+# You can use --port to specify the port of the tensorboard static server
+tensorboard --logdir config["root_dir"]/<config_filename>/ --port <port>
 
-# 例如，配置文件中的 "save_location" 参数为 "/home/happy/Experiments"，配置文件名为 "train_config.json"，修改默认端口为 6000
-# 可使用如下命令：
+# For example, the "root_dir" parameter in the configuration file is "/home/happy/Experiments", the configuration file name is "train_config.json", and the default port is modified to 6000. The following commands can be used:
 tensorboard --logdir /home/happy/Experiments/train_config --port 6000
 ```
 
-## 目录说明
+## Directory description
 
-在项目运行过程，会产生多个目录，均有不同的用途：
+During the training, multiple directories will be used, all with different purposes:
 
-- 主目录：当前 README.md 所在的目录，存储着所有源代码
-- 训练目录：训练配置文件中的`config["save_location"]`目录，存储当前项目的所有实验日志和模型断点
-- 实验目录：`config["save_location"]/<实验名>/`目录，存储着某一次实验的日志信息
+- Main directory: the directory where the current README.md is located, storing all source code
+- Training directory: the `config["root_dir"]` directory in the training configuration file, which stores all experiment logs and model checkpoints of the current project
+- Experiment directory: `config["root_dir"]/<experiment name>/` directory, which stores the log information of a certain experiment
 
+## Parameter Description
 
-## 参数说明
-### 训练
+### Training
 
-`config/train/<实验名>.json`，训练过程中产生的日志信息会存放在`config["save_location"]/<实验名>/`目录下
+`config/train/<config_filename>.json`
+
+The log information generated during the training process will be stored in`config["root_dir"]/<config_filename>/`.
 
 ```json5
 {
-    "seed": 0, // 保证实验可重复性的随机种子
-    "description": "...",  // 实验描述，后续会显示在 Tensorboard 中
-    "root_dir": "~/Experiments/Wave-U-Net", //存放实验结果的目录
+    "seed": 0, // Random seeds to ensure experiment repeatability
+    "description": "...",  // Experiment description, will be displayed in Tensorboard later
+    "root_dir": "~/Experiments/Wave-U-Net", // Directory for storing experiment results
     "cudnn_deterministic": false,
-    "trainer": { // 训练过程
-        "module": "trainer.trainer", // 训练器模型的文件
-        "main": "Trainer", // 训练器模型的具体类
-        "epochs": 1200, // 训练的上限
-        "save_checkpoint_interval": 10, // 保存模型断点的间隔
+    "trainer": { // For training process
+        "module": "trainer.trainer", // Which trainer
+        "main": "Trainer", // The concrete class of the trainer model
+        "epochs": 1200, // Upper limit of training
+        "save_checkpoint_interval": 10, // Save model breakpoint interval
         "validation":{
-        "interval": 10, // 验证的间隔
-         "find_max": true, // 当 find_max 为 true 时，如果计算出的评价指标为已知的最大值，就会将当前轮次的模型断点另外缓存一份
+        "interval": 10, // validation interval
+         "find_max": true, // When find_max is true, if the calculated metric is the known maximum value, it will cache another copy of the current round of model checkpoint.
         "custon": {
-            "visualize_audio_limit": 20, // 验证时可视化音频的间隔，之所以设置这个参数，是因为可视化音频比较慢
-            "visualize_waveform_limit": 20, // 验证时可视化波形的间隔，之所以设置这个参数，是因为可视化波形比较慢
-            "visualize_spectrogram_limit": 20, //验证可视化频谱的间隔，之所以设置这个参数，是因为可视化频谱比较慢
-            "sample_length": 16384 //采样点数
+            "visualize_audio_limit": 20, // The interval of visual audio during validation. The reason for setting this parameter is that visual audio is slow
+            "visualize_waveform_limit": 20, // The interval of the visualization waveform during validation. The reason for setting this parameter is because the visualization waveform is slow
+            "visualize_spectrogram_limit": 20, // Verify the interval of the visualization spectrogram. This parameter is set because the visualization spectrum is slow
+            "sample_length": 16384 // See train dataset
             } 
         }
     },
     "model": {
-        "module": "model.unet_basic", // 训练使用的模型文件
-        "main": "Model", // 训练模型的具体类
-        "args": {} // 传给模型类的参数
+        "module": "model.unet_basic", // Model files used for training
+        "main": "Model", // Concrete class of training model
+        "args": {} // Parameters passed to the model class
     },
     "loss_function": {
-        "module": "model.loss", // 损失函数的模型文件
-        "main": "mse_loss", // 损失函数模型的具体类
-        "args": {} // 传给模型类的参数
+        "module": "model.loss", // Model file of loss function
+        "main": "mse_loss", // Concrete class of loss function
+        "args": {} // Parameters passed to the model class
     },
     "optimizer": {
         "lr": 0.001,
@@ -187,9 +180,9 @@ tensorboard --logdir /home/happy/Experiments/train_config --port 6000
         "beat2": 0.009
     },
     "train_dataset": {
-        "module": "dataset.waveform_dataset", // 存放训练集类模型的文件
-        "main": "Dataset", // 训练集模型的具体类
-        "args": { // 传递给训练集类的参数，详见具体的训练集类
+        "module": "dataset.waveform_dataset", // Store the training set model file
+        "main": "Dataset", // Concrete class of training dataset
+        "args": { // The parameters passed to the training set class, see the specific training set class for details
             "dataset": "~/Datasets/SEGAN_Dataset/train_dataset.txt",
             "limit": null,
             "offset": 0,
@@ -209,41 +202,44 @@ tensorboard --logdir /home/happy/Experiments/train_config --port 6000
     },
     "train_dataloader": {
         "batch_size": 120,
-        "num_workers": 40, // 开启多少个线程对数据进行预处理 
+        "num_workers": 40, // How many threads to start to preprocess the data
         "shuffle": true,
         "pin_memory":true
     }
 }
 ```
 
-### 增强
+### Enhancement
 
 `config/enhancement/*.json`
 
 ```json5
 {
     "model": {
-        "module": "model.unet_basic", // 放置模型的文件
-        "main": "UNet",// 文件内的具体模型类
-        "args": {} // 传给模型类的参数
+        "module": "model.unet_basic",  // Store the model file
+        "main": "UNet",  // The specific model class in the file
+        "args": {}  // Parameters passed to the model class
     },
     "dataset": {
-        "module": "dataset.waveform_dataset", // 增强使用的数据集类
-        "main": "WaveformDataset", // 传递给数据集类的参数，详见具体的训练集类
-        "args": {
-            "dataset": "/home/imucs/Datasets/2019-09-03-timit_train-900_test-50/enhancement.txt",
+        "module": "dataset.waveform_dataset_enhancement",  // Store the enhancement dataset file
+        "main": "WaveformDataset",  // Concrete class of enhacnement dataset
+        "args": {  // The parameters passed to the dataset class, see the specific enhancement dataset class for details
+            "dataset": "/home/imucs/tmp/UNet_and_Inpainting/data.txt",
             "limit": 400,
             "offset": 0,
             "sample_length": 16384
         }
+    },
+    "custom": {
+        "sample_length": 16384
     }
 }
 ```
 
-在增强时，存储数据集路径的 txt 文件仅仅指定带噪语音的路径即可，类似这样：
+During the enhancement, only the path of the noisy speech can be listed in the *.txt file, similar to this:
 
 ```text
-# enhancement.txt
+# enhancement_*.txt
 
 /home/imucs/tmp/UNet_and_Inpainting/0001_babble_-7dB_Clean.wav
 /home/imucs/tmp/UNet_and_Inpainting/0001_babble_-7dB_Enhanced_Inpainting_200.wav
@@ -254,6 +250,5 @@ tensorboard --logdir /home/happy/Experiments/train_config --port 6000
 
 ## TODO
 
-- [x] 使用全长语音进行验证
-- [x] 增强脚本
-- [ ] 测试脚本
+- [x] Use full-length speech for validation
+- [x] Enhancement script
