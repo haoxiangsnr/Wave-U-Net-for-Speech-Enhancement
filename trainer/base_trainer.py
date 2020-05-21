@@ -9,7 +9,12 @@ from util import visualization
 from util.utils import prepare_empty_dir, ExecutionTime
 
 class BaseTrainer:
-    def __init__(self, config, resume: bool, model, loss_function, optimizer):
+    def __init__(self,
+                 config,
+                 resume: bool,
+                 model,
+                 loss_function,
+                 optimizer):
         self.n_gpu = torch.cuda.device_count()
         self.device = self._prepare_device(self.n_gpu, cudnn_deterministic=config["cudnn_deterministic"])
 
@@ -29,7 +34,7 @@ class BaseTrainer:
         self.find_max = self.validation_config["find_max"]
         self.validation_custom_config = self.validation_config["custom"]
 
-        # The following args is not in the config file, We will update it if resume is True in later.
+        # The following args is not in the config file. We will update it if the resume is True in later.
         self.start_epoch = 1
         self.best_score = -np.inf if self.find_max else np.inf
         self.root_dir = Path(config["root_dir"]).expanduser().absolute() / config["experiment_name"]
@@ -55,9 +60,9 @@ class BaseTrainer:
         self._print_networks([self.model])
 
     def _resume_checkpoint(self):
-        """Resume experiment from latest checkpoint.
+        """Resume experiment from the latest checkpoint.
         Notes:
-            To be careful at Loading model. if model is an instance of DataParallel, we need to set model.module.*
+            To be careful at the loading. if the model is an instance of DataParallel, we need to set model.module.*
         """
         latest_model_path = self.checkpoints_dir.expanduser().absolute() / "latest_model.tar"
         assert latest_model_path.exists(), f"{latest_model_path} does not exist, can not load latest checkpoint."
@@ -76,7 +81,8 @@ class BaseTrainer:
         print(f"Model checkpoint loaded. Training will begin in {self.start_epoch} epoch.")
 
     def _save_checkpoint(self, epoch, is_best=False):
-        """Save checkpoint to <root_dir>/checkpoints directory, which contains:
+        """Save checkpoint to <root_dir>/checkpoints directory.
+        It contains:
             - current epoch
             - best score in history
             - optimizer parameters
@@ -113,7 +119,7 @@ class BaseTrainer:
             print(f"\t Found best score in {epoch} epoch, saving...")
             torch.save(state_dict, (self.checkpoints_dir / "best_model.tar").as_posix())
 
-        # Use model.cpu() or model.to("cpu") will migrate the model to CPU, at which point we need re-migrate model back.
+        # Use model.cpu() or model.to("cpu") will migrate the model to CPU, at which point we need remigrate model back.
         # No matter tensor.cuda() or tensor.to("cuda"), if tensor in CPU, the tensor will not be migrated to GPU, but the model will.
         self.model.to(self.device)
 
@@ -125,7 +131,7 @@ class BaseTrainer:
                 if n_gpu is 0, use CPU;
                 if n_gpu > 1, use GPU.
             cudnn_deterministic (bool): repeatability
-                cudnn.benchmark will find algorithms to optimize training. if we need to consider the repeatability of experiment, set use_cudnn_deterministic to True
+                cudnn.benchmark will find algorithms to optimize training. if we need to consider the repeatability of the experiment, set use_cudnn_deterministic to True
         """
         if n_gpu == 0:
             print("Using CPU in the experiment.")
@@ -141,7 +147,7 @@ class BaseTrainer:
         return device
 
     def _is_best(self, score, find_max=True):
-        """Check if the current model is the best model
+        """Check if the current model is the best.
         """
         if find_max and score >= self.best_score:
             self.best_score = score
@@ -154,7 +160,7 @@ class BaseTrainer:
 
     @staticmethod
     def _transform_pesq_range(pesq_score):
-        """transform [-0.5 ~ 4.5] to [0 ~ 1]
+        """transform PESQ range. From [-0.5 ~ 4.5] to [0 ~ 1].
         """
         return (pesq_score + 0.5) / 5
 
@@ -170,7 +176,7 @@ class BaseTrainer:
             print(f"\tNetwork {i}: {params_of_network / 1e6} million.")
             params_of_all_networks += params_of_network
 
-        print(f"The amount of parameters in the project is {params_of_all_networks / 1e6} million.")
+        print(f"The amount of parameters is {params_of_all_networks / 1e6} million.")
 
     def _set_models_to_train_mode(self):
         self.model.train()
@@ -191,7 +197,7 @@ class BaseTrainer:
                 self._save_checkpoint(epoch)
 
             if self.validation_interval != 0 and epoch % self.validation_interval == 0:
-                print(f"[{timer.duration()} seconds] Training is over, Validation is in progress...")
+                print(f"[{timer.duration()} seconds] Training is over. Validation is in progress...")
 
                 self._set_models_to_eval_mode()
                 score = self._validation_epoch(epoch)

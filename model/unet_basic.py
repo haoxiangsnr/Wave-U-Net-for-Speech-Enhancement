@@ -98,21 +98,3 @@ class Model(nn.Module):
         o = torch.cat([o, input], dim=1)
         o = self.out(o)
         return o
-
-
-#             n_layers = 12, channels_interval = 24
-#             UpSamplingLayer(288 + 288, 288),
-#             UpSamplingLayer(264 + 288, 264), # 同水平层的降采样后维度为 264
-#             UpSamplingLayer(240 + 264, 240),
-#
-#             UpSamplingLayer(216 + 240, 216),
-#             UpSamplingLayer(192 + 216, 192),
-#             UpSamplingLayer(168 + 192, 168),
-#
-#             UpSamplingLayer(144 + 168, 144),
-#             UpSamplingLayer(120 + 144, 120),
-#             UpSamplingLayer(96 + 120, 96),
-#
-#             UpSamplingLayer(72 + 96, 72),
-#             UpSamplingLayer(48 + 72, 48),
-#             UpSamplingLayer(24 + 48, 24),

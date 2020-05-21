@@ -1,6 +1,6 @@
 {
     "seed": 0,
-    "description": "...",
+    "description": "...des",
     "root_dir": "~/Experiments/Wave-U-Net",
     "cudnn_deterministic": false,
     "trainer": {

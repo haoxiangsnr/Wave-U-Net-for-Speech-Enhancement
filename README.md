@@ -9,7 +9,8 @@ Implement [Wave-U-Net](https://arxiv.org/abs/1806.03185) by PyTorch, and migrate
 
 
 ```shell
-# 确保 CUDA 的 bin 目录添加到 PATH 环境变量中
+# Make sure the /bin of CUDA added to PATH enveriment variable.
+# Add 
 # 通过附加 LD_LIBRARY_PATH 环境变量来安装 CUDA 附带的 CUPTI
 export PATH="/usr/local/cuda-10.0/bin:$PATH"
 export LD_LIBRARY_PATH="/usr/local/cuda-10.0/lib64:$LD_LIBRARY_PATH"

@@ -51,39 +51,37 @@ class Trainer(BaseTrainer):
         sample_length = self.validation_custom_config["sample_length"]
 
         stoi_c_n = []  # clean and noisy
-        stoi_c_d = []  # clean and denoisy
+        stoi_c_e = []  # clean and enhanced
         pesq_c_n = []
-        pesq_c_d = []
+        pesq_c_e = []
 
         for i, (mixture, clean, name) in enumerate(self.validation_data_loader):
             assert len(name) == 1, "Only support batch size is 1 in enhancement stage."
             name = name[0]
+            padded_length = 0
 
-            # [1, 1, T]
-            mixture = mixture.to(self.device)
-            clean = clean.to(self.device)
+            mixture = mixture.to(self.device)  # [1, 1, T]
 
-            # Input of model should fixed length
-            mixture_chunks = torch.split(mixture, sample_length, dim=2)
-            if mixture_chunks[-1].shape[-1] != sample_length:
-                mixture_chunks = mixture_chunks[:-1]
+            # The input of the model should be fixed length.
+            if mixture.size(-1) % sample_length != 0:
+                padded_length = sample_length - (mixture.size(-1) % sample_length)
+                mixture = torch.cat([mixture, torch.zeros(1, 1, padded_length, device=self.device)], dim=-1)
+
+            assert mixture.size(-1) % sample_length == 0 and mixture.dim() == 3
+            mixture_chunks = list(torch.split(mixture, sample_length, dim=-1))
 
             enhanced_chunks = []
             for chunk in mixture_chunks:
                 enhanced_chunks.append(self.model(chunk).detach().cpu())
 
-            enhanced = torch.cat(enhanced_chunks, dim=2)
+            enhanced = torch.cat(enhanced_chunks, dim=-1)  # [1, 1, T]
+            enhanced = enhanced if padded_length == 0 else enhanced[:, :, :-padded_length]
 
-            # Back to numpy array
+            enhanced = enhanced.reshape(-1).numpy()
+            clean = clean.numpy().reshape(-1)
             mixture = mixture.cpu().numpy().reshape(-1)
-            enhanced = enhanced.numpy().reshape(-1)
-            clean = clean.cpu().numpy().reshape(-1)
 
-            min_len = min(len(mixture), len(clean), len(enhanced))
-
-            mixture = mixture[:min_len]
-            clean = clean[:min_len]
-            enhanced = enhanced[:min_len]
+            assert len(mixture) == len(enhanced) == len(clean)
 
             # Visualize audio
             if i <= visualize_audio_limit:
@@ -127,19 +125,19 @@ class Trainer(BaseTrainer):
 
             # Metric
             stoi_c_n.append(compute_STOI(clean, mixture, sr=16000))
-            stoi_c_d.append(compute_STOI(clean, enhanced, sr=16000))
+            stoi_c_e.append(compute_STOI(clean, enhanced, sr=16000))
             pesq_c_n.append(compute_PESQ(clean, mixture, sr=16000))
-            pesq_c_d.append(compute_PESQ(clean, enhanced, sr=16000))
+            pesq_c_e.append(compute_PESQ(clean, enhanced, sr=16000))
 
         get_metrics_ave = lambda metrics: np.sum(metrics) / len(metrics)
-        self.writer.add_scalars(f"评价指标均值/STOI", {
-            "clean 与 noisy": get_metrics_ave(stoi_c_n),
-            "clean 与 denoisy": get_metrics_ave(stoi_c_d)
+        self.writer.add_scalars(f"Metric/STOI", {
+            "Clean and noisy": get_metrics_ave(stoi_c_n),
+            "Clean and enhanced": get_metrics_ave(stoi_c_e)
         }, epoch)
-        self.writer.add_scalars(f"评价指标均值/PESQ", {
-            "clean 与 noisy": get_metrics_ave(pesq_c_n),
-            "clean 与 denoisy": get_metrics_ave(pesq_c_d)
+        self.writer.add_scalars(f"Metric/PESQ", {
+            "Clean and noisy": get_metrics_ave(pesq_c_n),
+            "Clean and enhanced": get_metrics_ave(pesq_c_e)
         }, epoch)
 
-        score = (get_metrics_ave(stoi_c_d) + self._transform_pesq_range(get_metrics_ave(pesq_c_d))) / 2
+        score = (get_metrics_ave(stoi_c_e) + self._transform_pesq_range(get_metrics_ave(pesq_c_e))) / 2
         return score

@@ -53,9 +53,8 @@ class ExecutionTime:
 
 
 def initialize_config(module_cfg, pass_args=True):
-    """
-    According to config items, load specific module dynamically with params.
-    eg，config items as follow：
+    """According to config items, load specific module dynamically with params.
+    e.g., Config items as follow：
         module_cfg = {
             "module": "model.model",
             "main": "Model",
@@ -100,8 +99,7 @@ def reverse_min_max(m, m_max, m_min):
 
 
 def sample_fixed_length_data_aligned(data_a, data_b, sample_length):
-    """
-    sample with fixed length from two dataset
+    """sample with fixed length from two dataset
     """
     assert len(data_a) == len(data_b), "Inconsistent dataset length, unable to sampling"
     assert len(data_a) >= sample_length, f"len(data_a) is {len(data_a)}, sample_length is {sample_length}."

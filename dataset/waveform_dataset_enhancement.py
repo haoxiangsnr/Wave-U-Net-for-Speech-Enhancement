@@ -5,28 +5,26 @@ import librosa
 
 class WaveformDataset(Dataset):
     def __init__(self, dataset, limit=None, offset=0, sample_length=16384):
-        """
-        构建增强数据集
+        """Construct dataset for enhancement.
         Args:
-            dataset (str): 语音数据集的路径，拓展名为 txt，见 Notes 部分
-            limit (int): 数据集的数量上限
-            offset (int): 数据集的起始位置的偏移值
-            sample_length(int): 模型仅支持定长输入，这个参数指定了每次输入模型的大小
+            dataset (str): *.txt. The path of the dataset list file. See "Notes."
+            limit (int): Return at most limit files in the list. If None, all files are returned.
+            offset (int): Return files starting at an offset within the list. Use negative values to offset from the end of the list.
 
         Notes:
-            语音数据集格式如下：
-            <带噪语音1的路径>
-            <带噪语音2的路径>
+            dataset list file：
+            <noisy_1_path>
+            <noisy_2_path>
             ...
-            <带噪语音n的路径>
+            <noisy_n_path>
 
-            eg:
+            e.g.
             /enhancement/noisy/a.wav
             /enhancement/noisy/b.wav
             ...
 
         Return:
-            (mixture signals, clean signals, file name)
+            (mixture signals, filename)
         """
         super(WaveformDataset, self).__init__()
         dataset_list = [line.rstrip('\n') for line in open(os.path.abspath(os.path.expanduser(dataset)), "r")]

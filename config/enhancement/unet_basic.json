@@ -13,5 +13,8 @@
             "offset": 0,
             "sample_length": 16384
         }
+    },
+    "custom": {
+        "sample_length": 16384
     }
 }

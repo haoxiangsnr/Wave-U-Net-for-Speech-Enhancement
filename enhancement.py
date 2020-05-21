@@ -45,22 +45,30 @@ model.eval()
 """
 Enhancement
 """
-sample_length = dataloader.dataset.sample_length
+sample_length = config["custom"]["sample_length"]
 for mixture, name in tqdm(dataloader):
     assert len(name) == 1, "Only support batch size is 1 in enhancement stage."
     name = name[0]
+    padded_length = 0
 
-    mixture = mixture.to(device)
-    mixture_chunks = torch.split(mixture, sample_length, dim=2)
-    if mixture_chunks[-1].shape[-1] != sample_length:
-        mixture_chunks = mixture_chunks[:-1]
+    mixture = mixture.to(device)  # [1, 1, T]
 
-    enhance_chunks = []
+    # The input of the model should be fixed length.
+    if mixture.size(-1) % sample_length != 0:
+        padded_length = sample_length - (mixture.size(-1) % sample_length)
+        mixture = torch.cat([mixture, torch.zeros(1, 1, padded_length, device=device)], dim=-1)
+
+    assert mixture.size(-1) % sample_length == 0 and mixture.dim() == 3
+    mixture_chunks = list(torch.split(mixture, sample_length, dim=-1))
+
+    enhanced_chunks = []
     for chunk in mixture_chunks:
-        enhance_chunks.append((model(chunk).detach().cpu()))
+        enhanced_chunks.append(model(chunk).detach().cpu())
 
-    enhanced = torch.cat(enhance_chunks, dim=2)
-    enhanced = enhanced.numpy().reshape(-1)
+    enhanced = torch.cat(enhanced_chunks, dim=-1)  # [1, 1, T]
+    enhanced = enhanced if padded_length == 0 else enhanced[:, :, :-padded_length]
+
+    enhanced = enhanced.reshape(-1).numpy()
 
     output_path = os.path.join(output_dir, f"{name}.wav")
     librosa.output.write_wav(output_path, enhanced, sr=16000)
