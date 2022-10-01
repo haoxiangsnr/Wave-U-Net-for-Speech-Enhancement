@@ -76,6 +76,7 @@ class Trainer(BaseTrainer):
 
             enhanced = torch.cat(enhanced_chunks, dim=-1)  # [1, 1, T]
             enhanced = enhanced if padded_length == 0 else enhanced[:, :, :-padded_length]
+            mixture = mixture if padded_length == 0 else mixture[:, :, :-padded_length]
 
             enhanced = enhanced.reshape(-1).numpy()
             clean = clean.numpy().reshape(-1)
